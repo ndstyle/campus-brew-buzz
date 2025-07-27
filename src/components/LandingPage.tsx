@@ -3,7 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const LandingPage = () => {
+interface LandingPageProps {
+  onSignUp?: () => void;
+}
+
+const LandingPage = ({ onSignUp }: LandingPageProps) => {
   const [ucsdSlide, setUcsdSlide] = useState(0);
   const [nyuSlide, setNyuSlide] = useState(0);
   const [currentFeature, setCurrentFeature] = useState(0);
@@ -184,7 +188,10 @@ const LandingPage = () => {
 
         {/* CTA */}
         <div className="space-y-6">
-          <Button className="w-full h-14 text-xl font-medium rounded-full">
+          <Button 
+            onClick={onSignUp}
+            className="w-full h-14 text-xl font-medium rounded-full"
+          >
             sign up • login
           </Button>
           

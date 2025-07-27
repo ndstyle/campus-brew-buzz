@@ -18,11 +18,7 @@ const Index = () => {
   const renderCurrentState = () => {
     switch (appState) {
       case "landing":
-        return (
-          <div onClick={() => setAppState("auth")}>
-            <LandingPage />
-          </div>
-        );
+        return <LandingPage onSignUp={() => setAppState("auth")} />;
       case "auth":
         return (
           <AuthFlow 
