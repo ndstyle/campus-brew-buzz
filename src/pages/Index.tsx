@@ -4,6 +4,9 @@ import AuthFlow from "@/components/AuthFlow";
 import OnboardingFlow from "@/components/OnboardingFlow";
 import FeedPage from "@/components/FeedPage";
 import LeaderboardPage from "@/components/LeaderboardPage";
+import MapPage from "@/components/MapPage";
+import ProfilePage from "@/components/ProfilePage";
+import CoffeeShopDetail from "@/components/CoffeeShopDetail";
 import BottomNavigation from "@/components/BottomNavigation";
 
 type AppState = "landing" | "auth" | "onboarding" | "app";
@@ -15,9 +18,18 @@ const Index = () => {
   const renderCurrentState = () => {
     switch (appState) {
       case "landing":
-        return <LandingPage />;
+        return (
+          <div onClick={() => setAppState("auth")}>
+            <LandingPage />
+          </div>
+        );
       case "auth":
-        return <AuthFlow onBack={() => setAppState("landing")} />;
+        return (
+          <AuthFlow 
+            onBack={() => setAppState("landing")} 
+            onComplete={() => setAppState("onboarding")}
+          />
+        );
       case "onboarding":
         return <OnboardingFlow onComplete={() => setAppState("app")} />;
       case "app":
@@ -25,14 +37,7 @@ const Index = () => {
           <div className="relative">
             {activeTab === "feed" && <FeedPage />}
             {activeTab === "leaderboard" && <LeaderboardPage />}
-            {activeTab === "map" && (
-              <div className="mobile-container bg-background pb-20 flex items-center justify-center min-h-screen">
-                <div className="text-center space-y-4">
-                  <h2 className="text-2xl font-semibold">Map View</h2>
-                  <p className="text-muted-foreground">Coffee shop map coming soon!</p>
-                </div>
-              </div>
-            )}
+            {activeTab === "map" && <MapPage />}
             {activeTab === "search" && (
               <div className="mobile-container bg-background pb-20 flex items-center justify-center min-h-screen">
                 <div className="text-center space-y-4">
@@ -41,14 +46,7 @@ const Index = () => {
                 </div>
               </div>
             )}
-            {activeTab === "profile" && (
-              <div className="mobile-container bg-background pb-20 flex items-center justify-center min-h-screen">
-                <div className="text-center space-y-4">
-                  <h2 className="text-2xl font-semibold">My Profile</h2>
-                  <p className="text-muted-foreground">Profile page coming soon!</p>
-                </div>
-              </div>
-            )}
+            {activeTab === "profile" && <ProfilePage />}
             <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
           </div>
         );
@@ -56,30 +54,6 @@ const Index = () => {
         return <LandingPage />;
     }
   };
-
-  // Debug: Add click handlers to test navigation
-  const handleLandingClick = () => {
-    if (appState === "landing") {
-      setAppState("auth");
-    }
-  };
-
-  const handleAuthComplete = () => {
-    setAppState("onboarding");
-  };
-
-  // Override the landing page click to start auth flow
-  if (appState === "landing") {
-    return (
-      <div onClick={handleLandingClick}>
-        <LandingPage />
-      </div>
-    );
-  }
-
-  if (appState === "auth") {
-    return <AuthFlow onBack={() => setAppState("landing")} />;
-  }
 
   return renderCurrentState();
 };

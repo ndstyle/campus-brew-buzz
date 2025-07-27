@@ -13,16 +13,20 @@ const LeaderboardPage = () => {
   };
 
   const mockUsers = [
-    { username: "barackobama", score: 300, rank: 1, avatar: "BO" },
-    { username: "donaldtrump", score: 275, rank: 2, avatar: "DT" },
-    { username: "sarah_coffee", score: 250, rank: 3, avatar: "SC" },
-    { username: "mike_java", score: 230, rank: 4, avatar: "MJ" },
-    { username: "emma_espresso", score: 215, rank: 5, avatar: "EE" },
-    { username: "you", score: userStats[activeTab as keyof typeof userStats] * 10, rank: 8, avatar: "YOU", isCurrentUser: true },
+    { username: "barackobama", score: 300, rank: 1, avatar: "👤" },
+    { username: "donaldtrump", score: 275, rank: 2, avatar: "👤" },
+    { username: "sigmachad", score: 250, rank: 3, avatar: "👤" },
+    { username: "doug", score: 123, rank: 4, avatar: "👤" },
+    { username: "megaknight", score: 99, rank: 5, avatar: "👤" },
+    { username: "niranjan", score: 88, rank: 6, avatar: "👤" },
+    { username: "idris", score: 77, rank: 7, avatar: "👤" },
+    { username: "rizzlord", score: 49, rank: 8, avatar: "👤" },
+    { username: "rit", score: 31, rank: 9, avatar: "👤" },
+    { username: "baahubali", score: 3, rank: 10, avatar: "👤" },
   ];
 
   return (
-    <div className="mobile-container bg-background pb-20">
+    <div className="mobile-container bg-background pb-20 min-h-screen">
       <div className="mobile-safe-area">
         {/* Header */}
         <div className="flex items-center justify-between py-4 px-4">
@@ -41,56 +45,44 @@ const LeaderboardPage = () => {
 
         <div className="px-4">
           {/* Page Title */}
-          <h2 className="text-3xl font-bold mb-6">leaderboard</h2>
+          <h2 className="text-4xl font-bold mb-8">leaderboard</h2>
 
           {/* User Stats Circle */}
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center mb-8">
             <div className="relative">
-              <div className="w-32 h-32 border-4 border-primary rounded-full flex flex-col items-center justify-center bg-primary/5">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">
-                    {userStats[activeTab as keyof typeof userStats]}
-                  </div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
-                    {activeTab}
-                  </div>
+              <div className="w-32 h-32 border-4 border-gray-300 rounded-full flex flex-col items-center justify-center bg-background">
+                <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center mb-2">
+                  <div className="w-8 h-8 bg-gray-400 rounded-full"></div>
                 </div>
               </div>
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
-                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">YOU</span>
+              <div className="absolute -right-4 top-1/2 -translate-y-1/2">
+                <div className="text-right">
+                  <div className="text-lg font-semibold">Visited:</div>
+                  <div className="text-lg font-semibold">Reviewed:</div>
+                  <div className="text-lg font-semibold">Photos</div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Stats Display */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="text-center">
-              <div className="text-lg font-semibold">Visited</div>
-              <div className="text-2xl font-bold text-primary">{userStats.visited}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-semibold">Reviewed</div>
-              <div className="text-2xl font-bold text-primary">{userStats.reviewed}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-semibold">Photos</div>
-              <div className="text-2xl font-bold text-primary">{userStats.photos}</div>
+              <div className="absolute -right-12 top-1/2 -translate-y-1/2">
+                <div className="text-right">
+                  <div className="text-lg font-bold">5</div>
+                  <div className="text-lg font-bold">4</div>
+                  <div className="text-lg font-bold">3</div>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Tab Selection */}
           <div className="flex justify-center mb-6">
-            <div className="flex bg-muted rounded-lg p-1">
+            <div className="flex bg-background border border-border rounded-full p-1">
               {["visited", "reviewed", "photos"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium capitalize transition-colors ${
+                  className={`px-6 py-2 rounded-full text-sm font-medium capitalize transition-colors ${
                     activeTab === tab
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-foreground text-background"
+                      : "text-foreground hover:text-primary"
                   }`}
                 >
                   {tab}
@@ -106,6 +98,7 @@ const LeaderboardPage = () => {
                 variant={leaderboardType === "friends" ? "default" : "outline"}
                 onClick={() => setLeaderboardType("friends")}
                 size="sm"
+                className="rounded-full px-6"
               >
                 Friends
               </Button>
@@ -113,6 +106,7 @@ const LeaderboardPage = () => {
                 variant={leaderboardType === "global" ? "default" : "outline"}
                 onClick={() => setLeaderboardType("global")}
                 size="sm"
+                className="rounded-full px-6"
               >
                 Global
               </Button>
@@ -120,34 +114,21 @@ const LeaderboardPage = () => {
           </div>
 
           {/* Rankings List */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {mockUsers.map((user) => (
               <div
                 key={user.username}
-                className={`flex items-center justify-between p-3 rounded-lg ${
-                  user.isCurrentUser ? "bg-primary/10 border border-primary/20" : "bg-muted/30"
-                }`}
+                className="flex items-center justify-between p-3"
               >
-                <div className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    user.rank <= 3 ? "bg-yellow-500 text-white" : "bg-muted text-muted-foreground"
-                  }`}>
-                    {user.rank}
+                <div className="flex items-center space-x-4">
+                  <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                    <span className="text-lg">{user.avatar}</span>
                   </div>
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
-                    user.isCurrentUser ? "bg-primary text-white" : "bg-background text-foreground"
-                  }`}>
-                    {user.avatar}
-                  </div>
-                  <span className={`font-medium ${
-                    user.isCurrentUser ? "text-primary" : "text-foreground"
-                  }`}>
+                  <span className="font-medium text-lg">
                     @{user.username}
                   </span>
                 </div>
-                <div className={`text-lg font-bold ${
-                  user.isCurrentUser ? "text-primary" : "text-foreground"
-                }`}>
+                <div className="text-lg font-bold">
                   {user.score}
                 </div>
               </div>

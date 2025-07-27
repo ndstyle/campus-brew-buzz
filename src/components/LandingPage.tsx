@@ -45,111 +45,127 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="mobile-container bg-background">
-      <div className="mobile-safe-area py-8">
+    <div className="mobile-container bg-background min-h-screen">
+      <div className="mobile-safe-area py-8 px-6">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold text-foreground mb-3">
             rate<span className="text-primary">ur</span>coffee
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-xl">
             rate, discover, and share
           </p>
         </div>
 
         {/* Hero Section - Coffee Shop Cards */}
-        <div className="mb-8">
-          <div className="relative">
-            <div className="flex items-center justify-between mb-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={prevSlide}
-                className="rounded-full"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
-              
-              <div className="flex-1 mx-4">
-                <Card className="overflow-hidden">
-                  <div className="relative">
-                    <img
-                      src={coffeeShops[currentSlide].image}
-                      alt={coffeeShops[currentSlide].name}
-                      className="w-full h-48 object-cover"
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                      <h3 className="text-white font-semibold text-lg">
-                        {coffeeShops[currentSlide].name}
-                      </h3>
-                      <p className="text-white/80 text-sm">
-                        {coffeeShops[currentSlide].university}, {coffeeShops[currentSlide].location}
-                      </p>
-                    </div>
+        <div className="mb-12">
+          <div className="flex items-center justify-center gap-4 mb-6">
+            {/* Left Card */}
+            <div className="relative">
+              <Card className="w-40 h-52 overflow-hidden bg-black rounded-3xl">
+                <div className="relative h-full">
+                  <img
+                    src={coffeeShops[0].image}
+                    alt={coffeeShops[0].name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                    <h3 className="font-semibold text-lg mb-1">
+                      {coffeeShops[0].name}
+                    </h3>
+                    <p className="text-white/80 text-sm">
+                      {coffeeShops[0].university}, {coffeeShops[0].location}
+                    </p>
                   </div>
-                </Card>
-              </div>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={nextSlide}
-                className="rounded-full"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </Button>
+                  {/* Navigation arrows */}
+                  <button 
+                    onClick={prevSlide}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 text-white/60"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={nextSlide}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </Card>
             </div>
 
-            {/* Dots Indicator */}
-            <div className="flex justify-center space-x-2">
-              {coffeeShops.map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    index === currentSlide ? "bg-primary" : "bg-muted"
-                  }`}
-                />
-              ))}
+            {/* Right Card */}
+            <div className="relative">
+              <Card className="w-40 h-52 overflow-hidden bg-black rounded-3xl">
+                <div className="relative h-full">
+                  <img
+                    src={coffeeShops[1].image}
+                    alt={coffeeShops[1].name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                    <h3 className="font-semibold text-lg mb-1">
+                      {coffeeShops[1].name}
+                    </h3>
+                    <p className="text-white/80 text-sm">
+                      {coffeeShops[1].university}, {coffeeShops[1].location}
+                    </p>
+                  </div>
+                  {/* Navigation arrows */}
+                  <button 
+                    onClick={prevSlide}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 text-white/60"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={nextSlide}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </Card>
             </div>
           </div>
         </div>
 
         {/* Feature Highlights */}
-        <div className="mb-8">
-          <div className="text-center">
-            <div className="bg-accent rounded-xl p-6 mb-4">
-              <h3 className="text-primary font-semibold text-xl mb-2">
-                {features[0].title}
-              </h3>
-              <p className="text-accent-foreground text-sm">
-                {features[0].description}
-              </p>
-            </div>
-            
-            {/* Feature dots indicator */}
-            <div className="flex justify-center space-x-2">
-              {features.map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-2 h-2 rounded-full ${
-                    index === 0 ? "bg-primary" : "bg-muted"
-                  }`}
-                />
-              ))}
-            </div>
+        <div className="mb-12">
+          <div className="bg-background border border-border rounded-2xl p-6 mb-6">
+            <h3 className="text-primary font-semibold text-3xl mb-3">
+              {features[0].title}
+            </h3>
+            <p className="text-foreground text-lg leading-relaxed">
+              {features[0].description}
+            </p>
+          </div>
+          
+          {/* Feature dots indicator */}
+          <div className="flex justify-center space-x-2">
+            {features.map((_, index) => (
+              <div
+                key={index}
+                className={`w-2 h-2 rounded-full ${
+                  index === 0 ? "bg-foreground" : "bg-muted"
+                }`}
+              />
+            ))}
           </div>
         </div>
 
         {/* CTA */}
-        <div className="space-y-4">
-          <Button className="w-full h-12 text-lg font-medium">
+        <div className="space-y-6">
+          <Button className="w-full h-14 text-xl font-medium rounded-full">
             sign up • login
           </Button>
           
-          <p className="text-xs text-muted-foreground text-center px-4">
+          <p className="text-sm text-muted-foreground text-center px-4">
             by signing up, you accept our{" "}
-            <span className="underline">terms of service</span> and{" "}
-            <span className="underline">privacy policy</span>
+            <span className="text-primary underline">terms of service</span> and{" "}
+            <span className="text-primary underline">privacy policy</span>
           </p>
         </div>
       </div>

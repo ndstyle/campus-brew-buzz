@@ -14,7 +14,7 @@ interface AuthData {
   college: string;
 }
 
-const AuthFlow = ({ onBack }: { onBack: () => void }) => {
+const AuthFlow = ({ onBack, onComplete }: { onBack: () => void; onComplete: () => void }) => {
   const [currentStep, setCurrentStep] = useState<AuthStep>("email");
   const [showPassword, setShowPassword] = useState(false);
   const [authData, setAuthData] = useState<AuthData>({
@@ -43,6 +43,7 @@ const AuthFlow = ({ onBack }: { onBack: () => void }) => {
     } else {
       // Complete registration
       console.log("Registration complete:", authData);
+      onComplete();
     }
   };
 
