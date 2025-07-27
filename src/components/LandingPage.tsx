@@ -4,9 +4,11 @@ import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const LandingPage = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [ucsdSlide, setUcsdSlide] = useState(0);
+  const [nyuSlide, setNyuSlide] = useState(0);
+  const [currentFeature, setCurrentFeature] = useState(0);
   
-  const coffeeShops = [
+  const ucsdCoffeeShops = [
     {
       name: "Copa Vida",
       university: "UCSD",
@@ -14,10 +16,25 @@ const LandingPage = () => {
       image: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop"
     },
     {
+      name: "The Coffee Bean",
+      university: "UCSD", 
+      location: "San Diego",
+      image: "https://images.unsplash.com/photo-1498804103079-a6351b050096?w=400&h=300&fit=crop"
+    }
+  ];
+
+  const nyuCoffeeShops = [
+    {
       name: "Whistle & Fizz", 
       university: "NYU",
       location: "New York City",
       image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop"
+    },
+    {
+      name: "Joe Coffee",
+      university: "NYU",
+      location: "New York City", 
+      image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&h=300&fit=crop"
     }
   ];
 
@@ -36,12 +53,20 @@ const LandingPage = () => {
     }
   ];
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % coffeeShops.length);
+  const nextUcsdSlide = () => {
+    setUcsdSlide((prev) => (prev + 1) % ucsdCoffeeShops.length);
   };
 
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + coffeeShops.length) % coffeeShops.length);
+  const prevUcsdSlide = () => {
+    setUcsdSlide((prev) => (prev - 1 + ucsdCoffeeShops.length) % ucsdCoffeeShops.length);
+  };
+
+  const nextNyuSlide = () => {
+    setNyuSlide((prev) => (prev + 1) % nyuCoffeeShops.length);
+  };
+
+  const prevNyuSlide = () => {
+    setNyuSlide((prev) => (prev - 1 + nyuCoffeeShops.length) % nyuCoffeeShops.length);
   };
 
   return (
@@ -60,34 +85,34 @@ const LandingPage = () => {
         {/* Hero Section - Coffee Shop Cards */}
         <div className="mb-12">
           <div className="flex items-center justify-center gap-4 mb-6">
-            {/* Left Card */}
+            {/* Left Card - UCSD */}
             <div className="relative">
               <Card className="w-40 h-52 overflow-hidden bg-black rounded-3xl">
                 <div className="relative h-full">
                   <img
-                    src={coffeeShops[0].image}
-                    alt={coffeeShops[0].name}
+                    src={ucsdCoffeeShops[ucsdSlide].image}
+                    alt={ucsdCoffeeShops[ucsdSlide].name}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                     <h3 className="font-semibold text-lg mb-1">
-                      {coffeeShops[0].name}
+                      {ucsdCoffeeShops[ucsdSlide].name}
                     </h3>
                     <p className="text-white/80 text-sm">
-                      {coffeeShops[0].university}, {coffeeShops[0].location}
+                      {ucsdCoffeeShops[ucsdSlide].university}, {ucsdCoffeeShops[ucsdSlide].location}
                     </p>
                   </div>
                   {/* Navigation arrows */}
                   <button 
-                    onClick={prevSlide}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 text-white/60"
+                    onClick={prevUcsdSlide}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <button 
-                    onClick={nextSlide}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60"
+                    onClick={nextUcsdSlide}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
@@ -95,34 +120,34 @@ const LandingPage = () => {
               </Card>
             </div>
 
-            {/* Right Card */}
+            {/* Right Card - NYU */}
             <div className="relative">
               <Card className="w-40 h-52 overflow-hidden bg-black rounded-3xl">
                 <div className="relative h-full">
                   <img
-                    src={coffeeShops[1].image}
-                    alt={coffeeShops[1].name}
+                    src={nyuCoffeeShops[nyuSlide].image}
+                    alt={nyuCoffeeShops[nyuSlide].name}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                     <h3 className="font-semibold text-lg mb-1">
-                      {coffeeShops[1].name}
+                      {nyuCoffeeShops[nyuSlide].name}
                     </h3>
                     <p className="text-white/80 text-sm">
-                      {coffeeShops[1].university}, {coffeeShops[1].location}
+                      {nyuCoffeeShops[nyuSlide].university}, {nyuCoffeeShops[nyuSlide].location}
                     </p>
                   </div>
                   {/* Navigation arrows */}
                   <button 
-                    onClick={prevSlide}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 text-white/60"
+                    onClick={prevNyuSlide}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <button 
-                    onClick={nextSlide}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60"
+                    onClick={nextNyuSlide}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
@@ -134,22 +159,23 @@ const LandingPage = () => {
 
         {/* Feature Highlights */}
         <div className="mb-12">
-          <div className="bg-background border border-border rounded-2xl p-6 mb-6">
+          <div className="bg-background border border-border rounded-2xl p-6 mb-6 transition-all duration-300">
             <h3 className="text-primary font-semibold text-3xl mb-3">
-              {features[0].title}
+              {features[currentFeature].title}
             </h3>
             <p className="text-foreground text-lg leading-relaxed">
-              {features[0].description}
+              {features[currentFeature].description}
             </p>
           </div>
           
           {/* Feature dots indicator */}
           <div className="flex justify-center space-x-2">
             {features.map((_, index) => (
-              <div
+              <button
                 key={index}
-                className={`w-2 h-2 rounded-full ${
-                  index === 0 ? "bg-foreground" : "bg-muted"
+                onClick={() => setCurrentFeature(index)}
+                className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                  index === currentFeature ? "bg-foreground" : "bg-muted hover:bg-muted-foreground/50"
                 }`}
               />
             ))}
