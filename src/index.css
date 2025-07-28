@@ -39,6 +39,10 @@ All colors MUST be HSL.
     --coffee-medium: 30 30% 70%;
     --coffee-dark: 30 20% 30%;
 
+    /* Rating colors */
+    --success: 120 60% 50%;
+    --success-foreground: 0 0% 100%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 

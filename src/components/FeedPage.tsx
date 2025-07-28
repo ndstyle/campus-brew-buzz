@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Bell, Menu, Heart, MessageCircle, Share, Plus, Bookmark } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Bell, Menu, Heart, MessageCircle, Share, Plus, Bookmark, Search } from "lucide-react";
 
 const FeedPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -58,11 +59,12 @@ const FeedPage = () => {
         {/* Search Bar */}
         <div className="px-4 mb-4">
           <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               placeholder="Search a restaurant, member, etc."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-12 bg-muted/30 border-0 rounded-xl pl-4"
+              className="h-12 bg-muted/30 border-0 rounded-xl pl-10 pr-4"
             />
           </div>
         </div>
@@ -90,11 +92,11 @@ const FeedPage = () => {
                 {/* User Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-                      <span className="text-foreground font-medium text-sm">
+                    <Avatar className="w-12 h-12">
+                      <AvatarFallback className="bg-muted text-foreground font-medium text-sm">
                         {review.user.initials}
-                      </span>
-                    </div>
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="flex-1">
                       <div className="text-base">
                         <span className="font-semibold">{review.user.name}</span>
@@ -116,8 +118,8 @@ const FeedPage = () => {
                   </div>
                   
                   {/* Rating Circle */}
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">
+                  <div className="w-12 h-12 bg-success rounded-full flex items-center justify-center">
+                    <span className="text-success-foreground font-bold text-lg">
                       {review.rating}
                     </span>
                   </div>
