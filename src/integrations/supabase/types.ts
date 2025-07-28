@@ -68,6 +68,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_follows_followee"
+            columns: ["followee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_follows_follower"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "follows_followee_id_fkey"
             columns: ["followee_id"]
             isOneToOne: false
@@ -107,6 +121,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_friends_friend"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_friends_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "friends_friend_id_fkey"
             columns: ["friend_id"]
             isOneToOne: false
@@ -122,6 +150,41 @@ export type Database = {
           },
         ]
       }
+      leaderboard_cache: {
+        Row: {
+          created_at: string | null
+          id: string
+          rank_position: number | null
+          total_reviews: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          rank_position?: number | null
+          total_reviews?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          rank_position?: number | null
+          total_reviews?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_cache_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           blurb: string | null
@@ -130,7 +193,7 @@ export type Database = {
           id: string
           photo_url: string | null
           rating: number | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           blurb?: string | null
@@ -139,7 +202,7 @@ export type Database = {
           id?: string
           photo_url?: string | null
           rating?: number | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           blurb?: string | null
@@ -148,7 +211,7 @@ export type Database = {
           id?: string
           photo_url?: string | null
           rating?: number | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -214,7 +277,7 @@ export type Database = {
           rank_position: number | null
           reviews_count: number | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
@@ -226,7 +289,7 @@ export type Database = {
           rank_position?: number | null
           reviews_count?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
@@ -238,7 +301,7 @@ export type Database = {
           rank_position?: number | null
           reviews_count?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -288,24 +351,29 @@ export type Database = {
       }
     }
     Views: {
-      leaderboard: {
-        Row: {
-          total_reviews: number | null
-          user_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "reviews_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_leaderboard: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_id: string
+          total_reviews: number
+          rank_position: number
+        }[]
+      }
+      log_security_event: {
+        Args: { event_type: string; user_id?: string; details?: Json }
+        Returns: undefined
+      }
+      validate_email: {
+        Args: { email: string }
+        Returns: boolean
+      }
+      validate_username: {
+        Args: { username: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
