@@ -3,6 +3,56 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, Eye, EyeOff } from "lucide-react";
 
+const COLLEGES = [
+  "University of Washington",
+  "University of California, Berkeley",
+  "University of California, Los Angeles",
+  "Stanford University",
+  "Massachusetts Institute of Technology",
+  "Harvard University",
+  "Yale University",
+  "Princeton University",
+  "Columbia University",
+  "University of Pennsylvania",
+  "Cornell University",
+  "Dartmouth College",
+  "Brown University",
+  "University of Chicago",
+  "Northwestern University",
+  "Duke University",
+  "Vanderbilt University",
+  "Rice University",
+  "University of Notre Dame",
+  "Georgetown University",
+  "Carnegie Mellon University",
+  "University of California, San Diego",
+  "University of California, Santa Barbara",
+  "University of California, Irvine",
+  "University of California, Davis",
+  "University of Southern California",
+  "New York University",
+  "Boston University",
+  "Northeastern University",
+  "University of Michigan",
+  "University of Wisconsin-Madison",
+  "University of Illinois Urbana-Champaign",
+  "Ohio State University",
+  "Pennsylvania State University",
+  "University of Florida",
+  "University of Texas at Austin",
+  "Texas A&M University",
+  "University of Georgia",
+  "University of North Carolina at Chapel Hill",
+  "Virginia Tech",
+  "University of Virginia",
+  "Arizona State University",
+  "University of Arizona",
+  "University of Colorado Boulder",
+  "University of Oregon",
+  "Oregon State University",
+  "Washington State University"
+];
+
 type AuthStep = "email" | "name" | "username" | "password" | "college";
 
 interface AuthData {
@@ -17,6 +67,7 @@ interface AuthData {
 const AuthFlow = ({ onBack, onComplete }: { onBack: () => void; onComplete: () => void }) => {
   const [currentStep, setCurrentStep] = useState<AuthStep>("email");
   const [showPassword, setShowPassword] = useState(false);
+  const [showCollegeSuggestions, setShowCollegeSuggestions] = useState(false);
   const [authData, setAuthData] = useState<AuthData>({
     email: "",
     firstName: "",
@@ -55,6 +106,20 @@ const AuthFlow = ({ onBack, onComplete }: { onBack: () => void; onComplete: () =
     } else {
       onBack();
     }
+  };
+
+  const filteredColleges = COLLEGES.filter(college =>
+    college.toLowerCase().includes(authData.college.toLowerCase())
+  ).slice(0, 6);
+
+  const handleCollegeSelect = (college: string) => {
+    setAuthData({ ...authData, college });
+    setShowCollegeSuggestions(false);
+  };
+
+  const handleCollegeInputChange = (value: string) => {
+    setAuthData({ ...authData, college: value });
+    setShowCollegeSuggestions(value.length > 0 && filteredColleges.length > 0);
   };
 
   const canContinue = () => {
@@ -197,16 +262,35 @@ const AuthFlow = ({ onBack, onComplete }: { onBack: () => void; onComplete: () =
         {/* College Step */}
         {currentStep === "college" && (
           <div className="space-y-6">
-            <div>
+            <div className="relative">
               <h2 className="text-2xl font-semibold mb-6">
                 find your college
               </h2>
-              <Input
-                placeholder="e.g. University of Washington"
-                value={authData.college}
-                onChange={(e) => setAuthData({ ...authData, college: e.target.value })}
-                className="text-lg h-12"
-              />
+              <div className="relative">
+                <Input
+                  placeholder="e.g. University of Washington"
+                  value={authData.college}
+                  onChange={(e) => handleCollegeInputChange(e.target.value)}
+                  onFocus={() => authData.college.length > 0 && setShowCollegeSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowCollegeSuggestions(false), 150)}
+                  className="text-lg h-12"
+                />
+                
+                {/* Autofill Dropdown */}
+                {showCollegeSuggestions && filteredColleges.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-input rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
+                    {filteredColleges.map((college, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleCollegeSelect(college)}
+                        className="w-full text-left px-4 py-3 hover:bg-accent hover:text-accent-foreground text-sm transition-colors"
+                      >
+                        {college}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
