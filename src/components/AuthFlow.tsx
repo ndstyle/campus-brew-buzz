@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const COLLEGES = [
   "University of Washington",
@@ -68,6 +69,7 @@ const AuthFlow = ({ onBack, onComplete }: { onBack: () => void; onComplete: () =
   const [currentStep, setCurrentStep] = useState<AuthStep>("email");
   const [showPassword, setShowPassword] = useState(false);
   const [showCollegeSuggestions, setShowCollegeSuggestions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [authData, setAuthData] = useState<AuthData>({
     email: "",
     firstName: "",
@@ -76,6 +78,8 @@ const AuthFlow = ({ onBack, onComplete }: { onBack: () => void; onComplete: () =
     password: "",
     college: ""
   });
+
+  const { signUp } = useAuth();
 
   const validatePassword = (password: string) => {
     const hasMinLength = password.length >= 6;
@@ -86,15 +90,28 @@ const AuthFlow = ({ onBack, onComplete }: { onBack: () => void; onComplete: () =
   const passwordValidation = validatePassword(authData.password);
   const isPasswordValid = passwordValidation.hasMinLength && passwordValidation.hasLettersAndNumbers;
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     const steps: AuthStep[] = ["email", "name", "username", "password", "college"];
     const currentIndex = steps.indexOf(currentStep);
+    
     if (currentIndex < steps.length - 1) {
       setCurrentStep(steps[currentIndex + 1]);
     } else {
-      // Complete registration
-      console.log("Registration complete:", authData);
-      onComplete();
+      // Complete registration with Supabase
+      setIsLoading(true);
+      
+      const { error } = await signUp(authData.email, authData.password, {
+        firstName: authData.firstName,
+        lastName: authData.lastName,
+        username: authData.username,
+        college: authData.college
+      });
+
+      setIsLoading(false);
+      
+      if (!error) {
+        onComplete();
+      }
     }
   };
 
@@ -122,10 +139,15 @@ const AuthFlow = ({ onBack, onComplete }: { onBack: () => void; onComplete: () =
     setShowCollegeSuggestions(value.length > 0 && filteredColleges.length > 0);
   };
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const canContinue = () => {
     switch (currentStep) {
       case "email":
-        return authData.email.includes("@");
+        return validateEmail(authData.email);
       case "name":
         return authData.firstName.trim() && authData.lastName.trim();
       case "username":
@@ -299,10 +321,10 @@ const AuthFlow = ({ onBack, onComplete }: { onBack: () => void; onComplete: () =
         <div className="mt-8">
           <Button
             onClick={handleContinue}
-            disabled={!canContinue()}
+            disabled={!canContinue() || isLoading}
             className="w-full h-12 text-lg font-medium"
           >
-            continue
+            {isLoading ? "Creating account..." : "continue"}
           </Button>
         </div>
       </div>

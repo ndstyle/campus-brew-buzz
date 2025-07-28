@@ -5,9 +5,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface LandingPageProps {
   onSignUp?: () => void;
+  onSignIn?: () => void;
 }
 
-const LandingPage = ({ onSignUp }: LandingPageProps) => {
+const LandingPage = ({ onSignUp, onSignIn }: LandingPageProps) => {
   const [ucsdSlide, setUcsdSlide] = useState(0);
   const [nyuSlide, setNyuSlide] = useState(0);
   const [currentFeature, setCurrentFeature] = useState(0);
@@ -187,12 +188,20 @@ const LandingPage = ({ onSignUp }: LandingPageProps) => {
         </div>
 
         {/* CTA */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Button 
             onClick={onSignUp}
             className="w-full h-14 text-xl font-medium rounded-full"
           >
-            sign up • login
+            sign up
+          </Button>
+          
+          <Button 
+            onClick={onSignIn}
+            variant="outline"
+            className="w-full h-14 text-xl font-medium rounded-full"
+          >
+            login
           </Button>
           
           <p className="text-sm text-muted-foreground text-center px-4">

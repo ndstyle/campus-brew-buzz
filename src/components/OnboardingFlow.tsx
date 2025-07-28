@@ -3,6 +3,152 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bell, MapPin, Users, UserPlus } from "lucide-react";
 
+const FriendInvitation = ({ onComplete, onSkip }: { onComplete: () => void; onSkip: () => void }) => {
+  const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const mockContacts = [
+    { id: "1", name: "Sarah Johnson", friends: 12 },
+    { id: "2", name: "Mike Chen", friends: 8 },
+    { id: "3", name: "Emma Davis", friends: 15 },
+    { id: "4", name: "Alex Rodriguez", friends: 6 },
+    { id: "5", name: "Maya Patel", friends: 20 },
+    { id: "6", name: "Chris Wong", friends: 9 }
+  ];
+
+  const filteredContacts = mockContacts.filter(contact =>
+    contact.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleFriendToggle = (friendId: string) => {
+    setSelectedFriends(prev => {
+      if (prev.includes(friendId)) {
+        return prev.filter(id => id !== friendId);
+      } else if (prev.length < 3) {
+        return [...prev, friendId];
+      }
+      return prev;
+    });
+  };
+
+  const selectedFriendsData = mockContacts.filter(contact => 
+    selectedFriends.includes(contact.id)
+  );
+
+  const unselectedContacts = filteredContacts.filter(contact => 
+    !selectedFriends.includes(contact.id)
+  );
+
+  return (
+    <div className="space-y-8">
+      <div className="text-center">
+        <h2 className="text-2xl font-semibold mb-6">invite your friends</h2>
+        
+        {/* Selected friends at top */}
+        <div className="flex justify-center space-x-4 mb-6">
+          {[0, 1, 2].map((index) => {
+            const friend = selectedFriendsData[index];
+            return (
+              <div 
+                key={index} 
+                className={`w-16 h-16 rounded-full border-2 flex items-center justify-center ${
+                  friend 
+                    ? "bg-primary text-primary-foreground border-primary" 
+                    : "bg-muted border-dashed border-muted-foreground/30"
+                }`}
+              >
+                {friend ? (
+                  <span className="text-sm font-medium">
+                    {friend.name.split(' ').map(n => n[0]).join('')}
+                  </span>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Select up to 3 friends ({selectedFriends.length}/3)
+        </p>
+      </div>
+
+      {/* Search contacts */}
+      <div>
+        <Input
+          placeholder="Search your contacts"
+          className="h-12 text-lg"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
+      {/* Contact list */}
+      <div className="space-y-3 max-h-64 overflow-y-auto">
+        {/* Selected friends first */}
+        {selectedFriendsData.map((contact) => (
+          <div key={contact.id} className="flex items-center justify-between py-3 px-1 bg-primary/5 rounded-lg">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium">
+                  {contact.name.split(' ').map(n => n[0]).join('')}
+                </span>
+              </div>
+              <div>
+                <p className="font-medium">{contact.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {contact.friends} friends on rateurcoffee
+                </p>
+              </div>
+            </div>
+            <Button 
+              size="sm" 
+              variant="default"
+              onClick={() => handleFriendToggle(contact.id)}
+            >
+              Remove
+            </Button>
+          </div>
+        ))}
+        
+        {/* Unselected contacts */}
+        {unselectedContacts.map((contact) => (
+          <div key={contact.id} className="flex items-center justify-between py-3 px-1">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium">
+                  {contact.name.split(' ').map(n => n[0]).join('')}
+                </span>
+              </div>
+              <div>
+                <p className="font-medium">{contact.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {contact.friends} friends on rateurcoffee
+                </p>
+              </div>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => handleFriendToggle(contact.id)}
+              disabled={selectedFriends.length >= 3}
+            >
+              Add
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-3">
+        <Button onClick={onComplete} className="w-full h-12 text-lg">
+          invite friends ({selectedFriends.length})
+        </Button>
+        <Button onClick={onSkip} variant="ghost" className="w-full h-12 text-lg">
+          skip for now
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 type OnboardingStep = "notifications" | "location" | "social" | "invite";
 
 const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
@@ -138,63 +284,7 @@ const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
 
         {/* Friend Invitation */}
         {currentStep === "invite" && (
-          <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-2xl font-semibold mb-6">invite your friends</h2>
-              
-              {/* Placeholder avatars */}
-              <div className="flex justify-center space-x-4 mb-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-16 h-16 bg-muted rounded-full border-2 border-dashed border-muted-foreground/30"></div>
-                ))}
-              </div>
-            </div>
-
-            {/* Search contacts */}
-            <div>
-              <Input
-                placeholder="Search your contacts"
-                className="h-12 text-lg"
-              />
-            </div>
-
-            {/* Mock contact list */}
-            <div className="space-y-3">
-              {[
-                { name: "Sarah Johnson", friends: 12 },
-                { name: "Mike Chen", friends: 8 },
-                { name: "Emma Davis", friends: 15 }
-              ].map((contact, index) => (
-                <div key={index} className="flex items-center justify-between py-3 px-1">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium">
-                        {contact.name.split(' ').map(n => n[0]).join('')}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium">{contact.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {contact.friends} friends on rateurcoffee
-                      </p>
-                    </div>
-                  </div>
-                  <Button size="sm" variant="outline">
-                    Add
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-3">
-              <Button onClick={handleAllow} className="w-full h-12 text-lg">
-                invite friends
-              </Button>
-              <Button onClick={handleSkip} variant="ghost" className="w-full h-12 text-lg">
-                skip for now
-              </Button>
-            </div>
-          </div>
+          <FriendInvitation onComplete={handleAllow} onSkip={handleSkip} />
         )}
       </div>
     </div>

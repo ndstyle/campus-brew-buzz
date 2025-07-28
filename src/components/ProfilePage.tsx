@@ -1,8 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Bell, Menu, CheckCircle, Bookmark, Heart, Lock, Trophy, Plus } from "lucide-react";
+import { Bell, Menu, CheckCircle, Bookmark, Heart, Lock, Trophy, Plus, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ProfilePage = () => {
+  const { user, signOut } = useAuth();
   return (
     <div className="mobile-container bg-background pb-20 min-h-screen">
       <div className="mobile-safe-area">
@@ -18,8 +20,8 @@ const ProfilePage = () => {
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon">
-              <Menu className="h-5 w-5" />
+            <Button variant="ghost" size="icon" onClick={signOut}>
+              <LogOut className="h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -28,10 +30,14 @@ const ProfilePage = () => {
           {/* Profile Section */}
           <div className="text-center mb-8">
             <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-4xl font-medium text-muted-foreground">N</span>
+              <span className="text-4xl font-medium text-muted-foreground">
+                {user?.email?.charAt(0).toUpperCase() || "U"}
+              </span>
             </div>
-            <h2 className="text-2xl font-semibold mb-1">@niranjand</h2>
-            <p className="text-muted-foreground mb-4">Member since July 2025</p>
+            <h2 className="text-2xl font-semibold mb-1">@{user?.user_metadata?.username || "user"}</h2>
+            <p className="text-muted-foreground mb-4">
+              Member since {new Date(user?.created_at || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </p>
             
             <div className="flex space-x-4 justify-center">
               <Button variant="outline" size="sm" className="rounded-full">

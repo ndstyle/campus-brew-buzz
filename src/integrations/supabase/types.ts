@@ -83,6 +83,45 @@ export type Database = {
           },
         ]
       }
+      friends: {
+        Row: {
+          created_at: string | null
+          friend_id: string | null
+          id: string
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          friend_id?: string | null
+          id?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          friend_id?: string | null
+          id?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friends_friend_id_fkey"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friends_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           blurb: string | null
@@ -164,29 +203,85 @@ export type Database = {
           },
         ]
       }
+      user_stats: {
+        Row: {
+          created_at: string | null
+          current_streak: number | null
+          id: string
+          longest_streak: number | null
+          photos_count: number | null
+          places_visited: number | null
+          rank_position: number | null
+          reviews_count: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_streak?: number | null
+          id?: string
+          longest_streak?: number | null
+          photos_count?: number | null
+          places_visited?: number | null
+          rank_position?: number | null
+          reviews_count?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_streak?: number | null
+          id?: string
+          longest_streak?: number | null
+          photos_count?: number | null
+          places_visited?: number | null
+          rank_position?: number | null
+          reviews_count?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_stats_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           avatar_url: string | null
+          college: string | null
           created_at: string | null
           email: string
+          first_name: string | null
           full_name: string | null
           id: string
+          last_name: string | null
           username: string | null
         }
         Insert: {
           avatar_url?: string | null
+          college?: string | null
           created_at?: string | null
           email: string
+          first_name?: string | null
           full_name?: string | null
           id?: string
+          last_name?: string | null
           username?: string | null
         }
         Update: {
           avatar_url?: string | null
+          college?: string | null
           created_at?: string | null
           email?: string
+          first_name?: string | null
           full_name?: string | null
           id?: string
+          last_name?: string | null
           username?: string | null
         }
         Relationships: []
