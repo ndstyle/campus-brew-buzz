@@ -187,6 +187,76 @@ const LandingPage = ({ onSignUp, onSignIn }: LandingPageProps) => {
           </div>
         </div>
 
+        {/* How It Works Section */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-foreground text-center mb-8">How It Works</h2>
+          <div className="space-y-6">
+            <div className="flex items-start space-x-4">
+              <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                1
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-1">Find Your Cafe</h3>
+                <p className="text-muted-foreground text-sm">Search or discover coffee shops near your campus</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-4">
+              <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                2
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-1">Rate & Review</h3>
+                <p className="text-muted-foreground text-sm">Share your honest experience with a 1-10 rating</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-4">
+              <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                3
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground mb-1">Connect & Discover</h3>
+                <p className="text-muted-foreground text-sm">Follow friends and find new spots based on their reviews</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Section */}
+        <div className="mb-12">
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-primary mb-1">500+</div>
+              <div className="text-sm text-muted-foreground">Cafes Reviewed</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-primary mb-1">2.5K</div>
+              <div className="text-sm text-muted-foreground">Active Students</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-primary mb-1">12</div>
+              <div className="text-sm text-muted-foreground">Universities</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Testimonial Section */}
+        <div className="mb-12">
+          <Card className="p-6 bg-muted/30">
+            <div className="text-center">
+              <p className="text-foreground text-lg mb-4 italic">
+                "Finally, a way to find the best coffee spots on campus! The reviews are honest and the community is amazing."
+              </p>
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary-foreground rounded-full"></div>
+                <div className="text-left">
+                  <p className="font-medium text-foreground text-sm">Alex Rodriguez</p>
+                  <p className="text-muted-foreground text-xs">Columbia University</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
         {/* CTA */}
         <div className="space-y-4">
           <Button 
