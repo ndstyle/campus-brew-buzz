@@ -14,6 +14,7 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
   const [error, setError] = useState(null);
   const [loadingStatus, setLoadingStatus] = useState('Initializing Google Maps...');
   const [apiKey, setApiKey] = useState(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Custom map styles with purple theme and minimal POIs
   const mapStyles = [
@@ -149,8 +150,19 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
     }
   };
 
+  // Track component mount state
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
+
   // Initialize Google Maps
   useEffect(() => {
+    // Don't initialize until component is mounted and container is available
+    if (!isMounted || !mapRef.current) {
+      return;
+    }
+
     const initializeMap = async () => {
       try {
         console.log('🗺️ Starting Google Maps initialization...');
@@ -266,7 +278,7 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
     };
 
     initializeMap();
-  }, [center, zoom, apiKey]);
+  }, [center, zoom, apiKey, isMounted]);
 
   // Create custom marker icon
   const createMarkerIcon = (isSelected = false, hasUserReview = false) => {
