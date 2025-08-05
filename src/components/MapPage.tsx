@@ -1,7 +1,42 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, AlertCircle, RefreshCw } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useMapData } from "@/hooks/useMapData";
+import { getSchoolCoordinates } from "@/utils/schoolCoordinates";
+import GoogleMap from "@/components/Map/GoogleMap";
 
-const MapPage = () => {
+const MapPage = ({ onAddReview }) => {
+  const { user } = useAuth();
+  const { cafes, loading, error, fetchCafes, retryFetch } = useMapData();
+  const [mapCenter, setMapCenter] = useState(null);
+
+  // Get user's school coordinates
+  useEffect(() => {
+    if (user?.user_metadata?.college) {
+      const coordinates = getSchoolCoordinates(user.user_metadata.college);
+      setMapCenter(coordinates);
+    } else {
+      // Fallback to center US
+      setMapCenter({ lat: 39.8283, lng: -98.5795, zoom: 4 });
+    }
+  }, [user]);
+
+  // Fetch cafes when component mounts
+  useEffect(() => {
+    if (user?.user_metadata?.college) {
+      fetchCafes(user.user_metadata.college);
+    } else {
+      fetchCafes();
+    }
+  }, [user, fetchCafes]);
+
+  const handleAddReview = (cafe) => {
+    if (onAddReview) {
+      onAddReview(cafe);
+    }
+  };
+
   return (
     <div className="mobile-container bg-background min-h-screen relative">
       {/* Header */}
@@ -22,60 +57,44 @@ const MapPage = () => {
       </div>
 
       {/* Map Container */}
-      <div className="w-full h-screen bg-blue-100 relative">
-        {/* Mock Map Background */}
-        <div className="w-full h-full bg-gradient-to-br from-blue-50 to-blue-200 relative overflow-hidden">
-          {/* Mock Street Grid */}
-          <svg className="absolute inset-0 w-full h-full opacity-30">
-            <defs>
-              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#9CA3AF" strokeWidth="1"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-
-          {/* New York Label */}
-          <div className="absolute top-32 left-1/2 -translate-x-1/2">
-            <span className="text-2xl font-light text-gray-500">New York</span>
-          </div>
-
-          {/* Coffee Shop Pins */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center shadow-lg">
-              <div className="w-4 h-4 bg-white rounded-full"></div>
+      <div className="w-full h-screen pt-16">
+        {mapCenter ? (
+          <GoogleMap
+            center={mapCenter}
+            zoom={mapCenter.zoom}
+            cafes={cafes}
+            onAddReview={handleAddReview}
+            loading={loading}
+          />
+        ) : (
+          <div className="w-full h-full bg-muted/30 flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground">Loading map...</p>
             </div>
           </div>
+        )}
 
-          <div className="absolute top-1/3 left-1/3">
-            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center shadow-lg">
-              <div className="w-4 h-4 bg-white rounded-full"></div>
+        {/* Error overlay */}
+        {error && (
+          <div className="absolute top-20 left-4 right-4 z-20">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center space-x-3">
+              <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm text-destructive">Failed to load coffee shops</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={retryFetch}
+                className="flex-shrink-0"
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Retry
+              </Button>
             </div>
           </div>
-
-          <div className="absolute top-2/3 left-2/3">
-            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center shadow-lg">
-              <div className="w-4 h-4 bg-white rounded-full"></div>
-            </div>
-          </div>
-
-          <div className="absolute top-1/4 right-1/4">
-            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center shadow-lg">
-              <div className="w-4 h-4 bg-white rounded-full"></div>
-            </div>
-          </div>
-
-          <div className="absolute bottom-1/3 left-1/4">
-            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center shadow-lg">
-              <div className="w-4 h-4 bg-white rounded-full"></div>
-            </div>
-          </div>
-
-          {/* Mock Areas */}
-          <div className="absolute top-20 right-8 text-sm text-gray-500">BROOKLYN</div>
-          <div className="absolute top-40 left-8 text-sm text-gray-500">MANHATTAN</div>
-          <div className="absolute bottom-40 right-16 text-sm text-gray-500">QUEENS</div>
-        </div>
+        )}
       </div>
     </div>
   );

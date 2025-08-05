@@ -94,7 +94,7 @@ const Index = () => {
                 />
               )}
               {currentView === "leaderboard" && <LeaderboardPage />}
-              {currentView === "map" && <MapPage />}
+              {currentView === "map" && <MapPage onAddReview={handleAddReview} />}
               {currentView === "search" && (
                 <FeedPage 
                   searchMode={true}
