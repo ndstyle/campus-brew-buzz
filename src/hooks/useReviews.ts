@@ -35,7 +35,7 @@ export const useReviews = () => {
         .from('cafes')
         .select('id')
         .eq('id', reviewData.cafeId)
-        .single();
+        .maybeSingle();
 
       if (!existingCafe) {
         // Create cafe if it doesn't exist
@@ -44,7 +44,6 @@ export const useReviews = () => {
           .insert({
             id: reviewData.cafeId,
             name: reviewData.cafeName,
-            // Add default values for required fields
             google_place_id: reviewData.cafeId
           });
 

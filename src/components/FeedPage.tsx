@@ -1,23 +1,28 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Bell, Menu, Heart, MessageCircle, Share, Plus, Bookmark, Search } from "lucide-react";
+import { useReviews } from "@/hooks/useReviews";
+import { format } from "date-fns";
 
 interface FeedPageProps {
   searchMode?: boolean;
   onReviewClick?: (review: any) => void;
   onAddReview?: () => void;
+  refreshTrigger?: number;
 }
 
-const FeedPage = ({ searchMode = false, onReviewClick, onAddReview }: FeedPageProps) => {
+const FeedPage = ({ searchMode = false, onReviewClick, onAddReview, refreshTrigger }: FeedPageProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("nearby");
-  const [likedReviews, setLikedReviews] = useState<Set<number>>(new Set());
-  const [reviewInteractions, setReviewInteractions] = useState<Record<number, { likes: number; comments: number }>>({
-    1: { likes: 0, comments: 0 }
-  });
+  const [likedReviews, setLikedReviews] = useState<Set<string>>(new Set());
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const { fetchReviews } = useReviews();
 
   const filters = [
     { id: "nearby", label: "✈️ Recs Nearby", icon: "✈️" },
@@ -25,130 +30,138 @@ const FeedPage = ({ searchMode = false, onReviewClick, onAddReview }: FeedPagePr
     { id: "friends", label: "👥 Friend recs", icon: "👥" },
   ];
 
-  const baseReviews = [
-    {
-      id: 1,
-      user: {
-        name: "Chitraksha",
-        avatar: "CK",
-        initials: "CK"
-      },
-      cafe: {
-        name: "Nemesis Coffee Surrey Pavilion",
-        location: "Whalley, Surrey, BC, Canada",
-        visitCount: 1
-      },
-      rating: 8.5,
-      notes: "Such a good breakfast. Best avocado toast I've ever had and tiramisu croissant was on point",
-      photo: "https://images.unsplash.com/photo-1497515114629-f71d768fd07c?w=400&h=300&fit=crop",
-      timestamp: "July 19",
-      likes: 0,
-      comments: 0,
-      friends: ["Ishan Deshpande", "Manav Khanvilkar"]
-    },
-    {
-      id: 2,
-      user: {
-        name: "Sarah Chen",
-        avatar: "SC",
-        initials: "SC"
-      },
-      cafe: {
-        name: "Blue Bottle Coffee",
-        location: "Greenwich Village, NY",
-        visitCount: 3
-      },
-      rating: 9.2,
-      notes: "Perfect pour over technique. The single origin Ethiopian is incredible with notes of blueberry and chocolate.",
-      photo: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop",
-      timestamp: "July 18",
-      likes: 12,
-      comments: 3,
-      friends: []
-    },
-    {
-      id: 3,
-      user: {
-        name: "Mike Torres",
-        avatar: "MT",
-        initials: "MT"
-      },
-      cafe: {
-        name: "Joe Coffee",
-        location: "East Village, NY",
-        visitCount: 1
-      },
-      rating: 7.8,
-      notes: "Good espresso, great for studying. Can get crowded during peak hours but staff is friendly.",
-      photo: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop",
-      timestamp: "July 17",
-      likes: 8,
-      comments: 1,
-      friends: ["Alex Kim"]
-    }
-  ];
+  const loadReviews = async () => {
+    setLoading(true);
+    const data = await fetchReviews();
+    setReviews(data);
+    setLoading(false);
+  };
 
-  const mockReviews = baseReviews.map(review => ({
-    ...review,
-    likes: reviewInteractions[review.id]?.likes ?? review.likes,
-    comments: reviewInteractions[review.id]?.comments ?? review.comments
-  }));
+  useEffect(() => {
+    loadReviews();
+  }, []);
+
+  // Reload reviews when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      loadReviews();
+    }
+  }, [refreshTrigger]);
 
   const filteredReviews = useMemo(() => {
-    let filtered = mockReviews;
+    let filtered = reviews;
 
     // Search filter
     if (searchQuery.trim()) {
       filtered = filtered.filter(review => 
-        review.cafe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        review.cafe.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        review.notes.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        review.user.name.toLowerCase().includes(searchQuery.toLowerCase())
+        review.cafes?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        review.cafes?.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        review.blurb?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        review.users?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        review.users?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        review.users?.last_name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    // Category filter
+    // Category filter (simplified for now)
     if (activeFilter === "trending") {
-      filtered = [...filtered].sort((a, b) => b.likes - a.likes);
-    } else if (activeFilter === "friends") {
-      filtered = filtered.filter(review => review.friends.length > 0);
+      filtered = [...filtered].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
 
     return filtered;
-  }, [mockReviews, searchQuery, activeFilter]);
+  }, [reviews, searchQuery, activeFilter]);
 
-  const handleLike = (reviewId: number) => {
+  const handleLike = (reviewId: string) => {
     setLikedReviews(prev => {
       const newLiked = new Set(prev);
-      const isLiked = newLiked.has(reviewId);
-      
-      if (isLiked) {
+      if (newLiked.has(reviewId)) {
         newLiked.delete(reviewId);
       } else {
         newLiked.add(reviewId);
       }
-
-      setReviewInteractions(prevInteractions => ({
-        ...prevInteractions,
-        [reviewId]: {
-          ...prevInteractions[reviewId],
-          likes: (prevInteractions[reviewId]?.likes ?? baseReviews.find(r => r.id === reviewId)?.likes ?? 0) + (isLiked ? -1 : 1)
-        }
-      }));
-
       return newLiked;
     });
   };
 
-  const handleComment = (reviewId: number) => {
-    setReviewInteractions(prev => ({
-      ...prev,
-      [reviewId]: {
-        ...prev[reviewId],
-        comments: (prev[reviewId]?.comments ?? baseReviews.find(r => r.id === reviewId)?.comments ?? 0) + 1
-      }
-    }));
+  const getDisplayName = (user: any) => {
+    if (user?.first_name && user?.last_name) {
+      return `${user.first_name} ${user.last_name}`;
+    }
+    if (user?.username) {
+      return user.username;
+    }
+    return "Anonymous User";
   };
+
+  const getInitials = (user: any) => {
+    if (user?.first_name && user?.last_name) {
+      return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase();
+    }
+    if (user?.username) {
+      return user.username.substring(0, 2).toUpperCase();
+    }
+    return "AU";
+  };
+
+  if (loading) {
+    return (
+      <div className="mobile-container bg-background pb-20 min-h-screen">
+        <div className="mobile-safe-area">
+          {/* Header */}
+          <div className="flex items-center justify-between py-4 px-4">
+            <h1 className="text-xl font-bold">
+              {searchMode ? "Search & Review" : <>rate<span className="text-primary">ur</span>coffee</>}
+            </h1>
+            <div className="flex items-center space-x-3">
+              {onAddReview && (
+                <Button size="sm" onClick={onAddReview} className="flex items-center space-x-1">
+                  <Plus className="w-4 h-4" />
+                  <span>Add Review</span>
+                </Button>
+              )}
+              <Button variant="ghost" size="icon">
+                <Bell className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="px-4 mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder="Search a restaurant, member, etc."
+                className="h-12 bg-muted/30 border-0 rounded-xl pl-10 pr-4"
+                disabled
+              />
+            </div>
+          </div>
+
+          {/* Loading Skeleton */}
+          <div className="px-4 space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="p-4">
+                <div className="flex items-center space-x-3 mb-4">
+                  <Skeleton className="w-12 h-12 rounded-full" />
+                  <div className="flex-1">
+                    <Skeleton className="h-4 w-3/4 mb-2" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                  <Skeleton className="w-12 h-12 rounded-full" />
+                </div>
+                <Skeleton className="h-32 w-full mb-4 rounded-lg" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-2/3" />
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mobile-container bg-background pb-20 min-h-screen">
@@ -204,114 +217,112 @@ const FeedPage = ({ searchMode = false, onReviewClick, onAddReview }: FeedPagePr
 
         {/* Review Feed */}
         <div className="space-y-4 px-4">
-          {filteredReviews.map((review) => (
-            <Card 
-              key={review.id} 
-              className="overflow-hidden border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => onReviewClick?.(review)}
-            >
-              <div className="p-4">
-                {/* User Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="w-12 h-12">
-                      <AvatarFallback className="bg-muted text-foreground font-medium text-sm">
-                        {review.user.initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="text-base">
-                        <span className="font-semibold">{review.user.name}</span>
-                        <span className="text-muted-foreground"> ranked </span>
-                        <span className="font-semibold">{review.cafe.name}</span>
-                      </div>
-                      {review.friends.length > 0 && (
-                        <div className="text-sm text-muted-foreground">
-                          with {review.friends.join(", ")}
+          {filteredReviews.length === 0 ? (
+            <Card className="p-8 text-center">
+              <div className="text-muted-foreground">
+                {searchQuery ? "No reviews found matching your search." : "No reviews yet. Be the first to write one!"}
+              </div>
+              {onAddReview && !searchQuery && (
+                <Button onClick={onAddReview} className="mt-4">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Write First Review
+                </Button>
+              )}
+            </Card>
+          ) : (
+            filteredReviews.map((review) => (
+              <Card 
+                key={review.id} 
+                className="overflow-hidden border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => onReviewClick?.(review)}
+              >
+                <div className="p-4">
+                  {/* User Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="w-12 h-12">
+                        <AvatarFallback className="bg-muted text-foreground font-medium text-sm">
+                          {getInitials(review.users)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="text-base">
+                          <span className="font-semibold">{getDisplayName(review.users)}</span>
+                          <span className="text-muted-foreground"> ranked </span>
+                          <span className="font-semibold">{review.cafes?.name || "Unknown Cafe"}</span>
                         </div>
-                      )}
-                      <div className="text-sm text-muted-foreground flex items-center space-x-2">
-                        <span>🍽️ • {review.cafe.location}</span>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        🔄 {review.cafe.visitCount} visit
+                        <div className="text-sm text-muted-foreground flex items-center space-x-2">
+                          <span>🍽️ • {review.cafes?.address || review.cafes?.campus || "Location unknown"}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {format(new Date(review.created_at), "MMM d")}
+                        </div>
                       </div>
                     </div>
+                    
+                    {/* Rating Circle */}
+                    <div className="w-12 h-12 bg-success rounded-full flex items-center justify-center">
+                      <span className="text-success-foreground font-bold text-lg">
+                        {review.rating}
+                      </span>
+                    </div>
                   </div>
-                  
-                  {/* Rating Circle */}
-                  <div className="w-12 h-12 bg-success rounded-full flex items-center justify-center">
-                    <span className="text-success-foreground font-bold text-lg">
-                      {review.rating}
-                    </span>
+
+                  {/* Photo */}
+                  {review.photo_url && (
+                    <div className="mb-4">
+                      <img
+                        src={review.photo_url}
+                        alt="Review photo"
+                        className="w-full h-64 object-cover rounded-xl"
+                      />
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {review.blurb && (
+                    <div className="mb-4">
+                      <span className="font-semibold text-sm">Notes: </span>
+                      <span className="text-sm">{review.blurb}</span>
+                    </div>
+                  )}
+
+                  {/* Interaction Buttons */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-6">
+                      <button 
+                        className={`flex items-center space-x-1 transition-colors ${
+                          likedReviews.has(review.id) 
+                            ? 'text-red-500' 
+                            : 'text-muted-foreground hover:text-red-500'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLike(review.id);
+                        }}
+                      >
+                        <Heart className={`w-5 h-5 ${likedReviews.has(review.id) ? 'fill-current' : ''}`} />
+                      </button>
+                      <button className="flex items-center space-x-1 text-muted-foreground hover:text-blue-500 transition-colors">
+                        <MessageCircle className="w-5 h-5" />
+                      </button>
+                      <button className="text-muted-foreground hover:text-green-500 transition-colors">
+                        <Share className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <button className="text-muted-foreground hover:text-primary transition-colors">
+                        <Plus className="w-5 h-5" />
+                      </button>
+                      <button className="text-muted-foreground hover:text-yellow-500 transition-colors">
+                        <Bookmark className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                {/* Photo */}
-                {review.photo && (
-                  <div className="mb-4">
-                    <img
-                      src={review.photo}
-                      alt="Review photo"
-                      className="w-full h-64 object-cover rounded-xl"
-                    />
-                  </div>
-                )}
-
-                {/* Notes */}
-                <div className="mb-4">
-                  <span className="font-semibold text-sm">Notes: </span>
-                  <span className="text-sm">{review.notes}</span>
-                </div>
-
-                {/* Interaction Buttons */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-6">
-                    <button 
-                      className={`flex items-center space-x-1 transition-colors ${
-                        likedReviews.has(review.id) 
-                          ? 'text-red-500' 
-                          : 'text-muted-foreground hover:text-red-500'
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleLike(review.id);
-                      }}
-                    >
-                      <Heart className={`w-5 h-5 ${likedReviews.has(review.id) ? 'fill-current' : ''}`} />
-                      {review.likes > 0 && <span className="text-sm">{review.likes}</span>}
-                    </button>
-                    <button 
-                      className="flex items-center space-x-1 text-muted-foreground hover:text-blue-500 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleComment(review.id);
-                      }}
-                    >
-                      <MessageCircle className="w-5 h-5" />
-                      {review.comments > 0 && <span className="text-sm">{review.comments}</span>}
-                    </button>
-                    <button className="text-muted-foreground hover:text-green-500 transition-colors">
-                      <Share className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <button className="text-muted-foreground hover:text-primary transition-colors">
-                      <Plus className="w-5 h-5" />
-                    </button>
-                    <button className="text-muted-foreground hover:text-yellow-500 transition-colors">
-                      <Bookmark className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Timestamp */}
-                <div className="mt-3 text-xs text-muted-foreground">
-                  {review.timestamp}
-                </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))
+          )}
         </div>
       </div>
     </div>

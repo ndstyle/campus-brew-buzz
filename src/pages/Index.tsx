@@ -21,6 +21,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("feed");
   const [currentView, setCurrentView] = useState<AppView>("feed");
   const [selectedReview, setSelectedReview] = useState<any>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { user, loading } = useAuth();
 
   useEffect(() => {
@@ -32,6 +33,20 @@ const Index = () => {
       }
     }
   }, [user, loading]);
+
+  const handleReviewSubmitted = () => {
+    // Trigger refresh of the feed
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleAddReview = () => {
+    if (!user) {
+      // If user is not authenticated, redirect to sign in
+      setAppState("signin");
+      return;
+    }
+    setCurrentView("editor");
+  };
 
   if (loading) {
     return (
@@ -74,7 +89,8 @@ const Index = () => {
                     setSelectedReview(review);
                     setCurrentView("preview");
                   }}
-                  onAddReview={() => setCurrentView("editor")}
+                  onAddReview={handleAddReview}
+                  refreshTrigger={refreshTrigger}
                 />
               )}
               {currentView === "leaderboard" && <LeaderboardPage />}
@@ -86,7 +102,8 @@ const Index = () => {
                     setSelectedReview(review);
                     setCurrentView("preview");
                   }}
-                  onAddReview={() => setCurrentView("editor")}
+                  onAddReview={handleAddReview}
+                  refreshTrigger={refreshTrigger}
                 />
               )}
               {currentView === "profile" && (
@@ -97,7 +114,10 @@ const Index = () => {
                 />
               )}
               {currentView === "editor" && (
-                <Editor onBack={() => setCurrentView(activeTab as AppView)} />
+                <Editor 
+                  onBack={() => setCurrentView(activeTab as AppView)}
+                  onReviewSubmitted={handleReviewSubmitted}
+                />
               )}
               {currentView === "preview" && (
                 <Preview 
