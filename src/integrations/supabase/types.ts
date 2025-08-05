@@ -362,6 +362,10 @@ export type Database = {
           rank_position: number
         }[]
       }
+      increment_user_stats: {
+        Args: { user_id: string }
+        Returns: undefined
+      }
       log_security_event: {
         Args: { event_type: string; user_id?: string; details?: Json }
         Returns: undefined
