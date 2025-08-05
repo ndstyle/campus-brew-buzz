@@ -5,9 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
-import { Camera, MapPin, Search, Star } from "lucide-react";
+import { Camera, MapPin, Search, Star, ArrowLeft } from "lucide-react";
 
-const Editor = () => {
+interface EditorProps {
+  onBack?: () => void;
+}
+
+const Editor = ({ onBack }: EditorProps) => {
   const [rating, setRating] = useState([7]);
   const [selectedCafe, setSelectedCafe] = useState("");
   const [reviewText, setReviewText] = useState("");
@@ -25,8 +29,17 @@ const Editor = () => {
       <div className="mobile-safe-area py-6 px-4">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Write Review</h1>
-          <p className="text-muted-foreground">Share your coffee experience</p>
+          <div className="flex items-center space-x-3 mb-4">
+            {onBack && (
+              <Button variant="ghost" size="icon" onClick={onBack}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            )}
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Write Review</h1>
+              <p className="text-muted-foreground">Share your coffee experience</p>
+            </div>
+          </div>
         </div>
 
         {/* Cafe Selection */}

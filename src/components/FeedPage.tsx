@@ -1,13 +1,23 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bell, Menu, Heart, MessageCircle, Share, Plus, Bookmark, Search } from "lucide-react";
 
-const FeedPage = () => {
+interface FeedPageProps {
+  searchMode?: boolean;
+  onReviewClick?: (review: any) => void;
+  onAddReview?: () => void;
+}
+
+const FeedPage = ({ searchMode = false, onReviewClick, onAddReview }: FeedPageProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("nearby");
+  const [likedReviews, setLikedReviews] = useState<Set<number>>(new Set());
+  const [reviewInteractions, setReviewInteractions] = useState<Record<number, { likes: number; comments: number }>>({
+    1: { likes: 0, comments: 0 }
+  });
 
   const filters = [
     { id: "nearby", label: "✈️ Recs Nearby", icon: "✈️" },
@@ -15,7 +25,7 @@ const FeedPage = () => {
     { id: "friends", label: "👥 Friend recs", icon: "👥" },
   ];
 
-  const mockReviews = [
+  const baseReviews = [
     {
       id: 1,
       user: {
@@ -35,8 +45,110 @@ const FeedPage = () => {
       likes: 0,
       comments: 0,
       friends: ["Ishan Deshpande", "Manav Khanvilkar"]
+    },
+    {
+      id: 2,
+      user: {
+        name: "Sarah Chen",
+        avatar: "SC",
+        initials: "SC"
+      },
+      cafe: {
+        name: "Blue Bottle Coffee",
+        location: "Greenwich Village, NY",
+        visitCount: 3
+      },
+      rating: 9.2,
+      notes: "Perfect pour over technique. The single origin Ethiopian is incredible with notes of blueberry and chocolate.",
+      photo: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop",
+      timestamp: "July 18",
+      likes: 12,
+      comments: 3,
+      friends: []
+    },
+    {
+      id: 3,
+      user: {
+        name: "Mike Torres",
+        avatar: "MT",
+        initials: "MT"
+      },
+      cafe: {
+        name: "Joe Coffee",
+        location: "East Village, NY",
+        visitCount: 1
+      },
+      rating: 7.8,
+      notes: "Good espresso, great for studying. Can get crowded during peak hours but staff is friendly.",
+      photo: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop",
+      timestamp: "July 17",
+      likes: 8,
+      comments: 1,
+      friends: ["Alex Kim"]
     }
   ];
+
+  const mockReviews = baseReviews.map(review => ({
+    ...review,
+    likes: reviewInteractions[review.id]?.likes ?? review.likes,
+    comments: reviewInteractions[review.id]?.comments ?? review.comments
+  }));
+
+  const filteredReviews = useMemo(() => {
+    let filtered = mockReviews;
+
+    // Search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(review => 
+        review.cafe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        review.cafe.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        review.notes.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        review.user.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Category filter
+    if (activeFilter === "trending") {
+      filtered = [...filtered].sort((a, b) => b.likes - a.likes);
+    } else if (activeFilter === "friends") {
+      filtered = filtered.filter(review => review.friends.length > 0);
+    }
+
+    return filtered;
+  }, [mockReviews, searchQuery, activeFilter]);
+
+  const handleLike = (reviewId: number) => {
+    setLikedReviews(prev => {
+      const newLiked = new Set(prev);
+      const isLiked = newLiked.has(reviewId);
+      
+      if (isLiked) {
+        newLiked.delete(reviewId);
+      } else {
+        newLiked.add(reviewId);
+      }
+
+      setReviewInteractions(prevInteractions => ({
+        ...prevInteractions,
+        [reviewId]: {
+          ...prevInteractions[reviewId],
+          likes: (prevInteractions[reviewId]?.likes ?? baseReviews.find(r => r.id === reviewId)?.likes ?? 0) + (isLiked ? -1 : 1)
+        }
+      }));
+
+      return newLiked;
+    });
+  };
+
+  const handleComment = (reviewId: number) => {
+    setReviewInteractions(prev => ({
+      ...prev,
+      [reviewId]: {
+        ...prev[reviewId],
+        comments: (prev[reviewId]?.comments ?? baseReviews.find(r => r.id === reviewId)?.comments ?? 0) + 1
+      }
+    }));
+  };
 
   return (
     <div className="mobile-container bg-background pb-20 min-h-screen">
@@ -44,9 +156,15 @@ const FeedPage = () => {
         {/* Header */}
         <div className="flex items-center justify-between py-4 px-4">
           <h1 className="text-xl font-bold">
-            rate<span className="text-primary">ur</span>coffee
+            {searchMode ? "Search & Review" : <>rate<span className="text-primary">ur</span>coffee</>}
           </h1>
           <div className="flex items-center space-x-3">
+            {onAddReview && (
+              <Button size="sm" onClick={onAddReview} className="flex items-center space-x-1">
+                <Plus className="w-4 h-4" />
+                <span>Add Review</span>
+              </Button>
+            )}
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
             </Button>
@@ -86,8 +204,12 @@ const FeedPage = () => {
 
         {/* Review Feed */}
         <div className="space-y-4 px-4">
-          {mockReviews.map((review) => (
-            <Card key={review.id} className="overflow-hidden border-0 shadow-sm">
+          {filteredReviews.map((review) => (
+            <Card 
+              key={review.id} 
+              className="overflow-hidden border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => onReviewClick?.(review)}
+            >
               <div className="p-4">
                 {/* User Header */}
                 <div className="flex items-start justify-between mb-4">
@@ -145,21 +267,39 @@ const FeedPage = () => {
                 {/* Interaction Buttons */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-6">
-                    <button className="flex items-center space-x-1">
-                      <Heart className="w-5 h-5" />
+                    <button 
+                      className={`flex items-center space-x-1 transition-colors ${
+                        likedReviews.has(review.id) 
+                          ? 'text-red-500' 
+                          : 'text-muted-foreground hover:text-red-500'
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLike(review.id);
+                      }}
+                    >
+                      <Heart className={`w-5 h-5 ${likedReviews.has(review.id) ? 'fill-current' : ''}`} />
+                      {review.likes > 0 && <span className="text-sm">{review.likes}</span>}
                     </button>
-                    <button className="flex items-center space-x-1">
+                    <button 
+                      className="flex items-center space-x-1 text-muted-foreground hover:text-blue-500 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleComment(review.id);
+                      }}
+                    >
                       <MessageCircle className="w-5 h-5" />
+                      {review.comments > 0 && <span className="text-sm">{review.comments}</span>}
                     </button>
-                    <button>
+                    <button className="text-muted-foreground hover:text-green-500 transition-colors">
                       <Share className="w-5 h-5" />
                     </button>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <button>
+                    <button className="text-muted-foreground hover:text-primary transition-colors">
                       <Plus className="w-5 h-5" />
                     </button>
-                    <button>
+                    <button className="text-muted-foreground hover:text-yellow-500 transition-colors">
                       <Bookmark className="w-5 h-5" />
                     </button>
                   </div>

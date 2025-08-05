@@ -9,13 +9,18 @@ import MapPage from "@/components/MapPage";
 import ProfilePage from "@/components/ProfilePage";
 import CoffeeShopDetail from "@/components/CoffeeShopDetail";
 import BottomNavigation from "@/components/BottomNavigation";
+import Editor from "@/pages/Editor";
+import Preview from "@/pages/Preview";
 import { useAuth } from "@/contexts/AuthContext";
 
 type AppState = "landing" | "auth" | "signin" | "onboarding" | "app";
+type AppView = "feed" | "leaderboard" | "map" | "search" | "profile" | "editor" | "preview" | "detail";
 
 const Index = () => {
   const [appState, setAppState] = useState<AppState>("landing");
   const [activeTab, setActiveTab] = useState("feed");
+  const [currentView, setCurrentView] = useState<AppView>("feed");
+  const [selectedReview, setSelectedReview] = useState<any>(null);
   const { user, loading } = useAuth();
 
   useEffect(() => {
@@ -63,20 +68,51 @@ const Index = () => {
         return (
           <div className="relative min-h-screen">
             <div className="pb-20">
-              {activeTab === "feed" && <FeedPage />}
-              {activeTab === "leaderboard" && <LeaderboardPage />}
-              {activeTab === "map" && <MapPage />}
-              {activeTab === "search" && (
-                <div className="mobile-container bg-background flex items-center justify-center min-h-screen">
-                  <div className="text-center space-y-4">
-                    <h2 className="text-2xl font-semibold">Search & Review</h2>
-                    <p className="text-muted-foreground">Review interface coming soon!</p>
-                  </div>
-                </div>
+              {currentView === "feed" && (
+                <FeedPage 
+                  onReviewClick={(review) => {
+                    setSelectedReview(review);
+                    setCurrentView("preview");
+                  }}
+                  onAddReview={() => setCurrentView("editor")}
+                />
               )}
-              {activeTab === "profile" && <ProfilePage />}
+              {currentView === "leaderboard" && <LeaderboardPage />}
+              {currentView === "map" && <MapPage />}
+              {currentView === "search" && (
+                <FeedPage 
+                  searchMode={true}
+                  onReviewClick={(review) => {
+                    setSelectedReview(review);
+                    setCurrentView("preview");
+                  }}
+                  onAddReview={() => setCurrentView("editor")}
+                />
+              )}
+              {currentView === "profile" && (
+                <ProfilePage 
+                  onStatClick={(statType) => {
+                    // Handle stat navigation here if needed
+                  }}
+                />
+              )}
+              {currentView === "editor" && (
+                <Editor onBack={() => setCurrentView(activeTab as AppView)} />
+              )}
+              {currentView === "preview" && (
+                <Preview 
+                  review={selectedReview}
+                  onBack={() => setCurrentView(activeTab as AppView)}
+                />
+              )}
             </div>
-            <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+            <BottomNavigation 
+              activeTab={activeTab} 
+              onTabChange={(tab) => {
+                setActiveTab(tab);
+                setCurrentView(tab as AppView);
+              }} 
+            />
           </div>
         );
       default:

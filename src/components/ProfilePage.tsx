@@ -3,7 +3,11 @@ import { Card } from "@/components/ui/card";
 import { Bell, Menu, CheckCircle, Bookmark, Heart, Lock, Trophy, Plus, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
-const ProfilePage = () => {
+interface ProfilePageProps {
+  onStatClick?: (statType: string) => void;
+}
+
+const ProfilePage = ({ onStatClick }: ProfilePageProps) => {
   const { user, signOut } = useAuth();
   return (
     <div className="mobile-container bg-background pb-20 min-h-screen">
@@ -51,7 +55,10 @@ const ProfilePage = () => {
 
           {/* Activity Stats */}
           <div className="space-y-3 mb-8">
-            <div className="flex items-center justify-between p-4 bg-background border rounded-xl">
+            <div 
+              className="flex items-center justify-between p-4 bg-background border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => onStatClick?.('been')}
+            >
               <div className="flex items-center space-x-3">
                 <CheckCircle className="w-6 h-6" />
                 <span className="text-lg font-medium">Been</span>
@@ -62,7 +69,10 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-background border rounded-xl">
+            <div 
+              className="flex items-center justify-between p-4 bg-background border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => onStatClick?.('want-to-try')}
+            >
               <div className="flex items-center space-x-3">
                 <Bookmark className="w-6 h-6" />
                 <span className="text-lg font-medium">Want to Try</span>

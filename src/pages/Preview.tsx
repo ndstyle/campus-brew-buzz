@@ -3,9 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, Heart, MessageCircle, Share, MapPin, Clock } from "lucide-react";
+import { Star, Heart, MessageCircle, Share, MapPin, Clock, ArrowLeft } from "lucide-react";
 
-const Preview = () => {
+interface PreviewProps {
+  review?: any;
+  onBack?: () => void;
+}
+
+const Preview = ({ review, onBack }: PreviewProps) => {
   const [isLiked, setIsLiked] = useState(false);
 
   const mockReview = {
@@ -38,8 +43,17 @@ const Preview = () => {
       <div className="mobile-safe-area py-6 px-4">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Review Preview</h1>
-          <p className="text-muted-foreground">How your review will appear to others</p>
+          <div className="flex items-center space-x-3 mb-2">
+            {onBack && (
+              <Button variant="ghost" size="icon" onClick={onBack}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            )}
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Review Preview</h1>
+              <p className="text-muted-foreground">How your review will appear to others</p>
+            </div>
+          </div>
         </div>
 
         {/* Review Card */}
