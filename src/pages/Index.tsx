@@ -61,19 +61,21 @@ const Index = () => {
         return <OnboardingFlow onComplete={() => setAppState("app")} />;
       case "app":
         return (
-          <div className="relative">
-            {activeTab === "feed" && <FeedPage />}
-            {activeTab === "leaderboard" && <LeaderboardPage />}
-            {activeTab === "map" && <MapPage />}
-            {activeTab === "search" && (
-              <div className="mobile-container bg-background pb-20 flex items-center justify-center min-h-screen">
-                <div className="text-center space-y-4">
-                  <h2 className="text-2xl font-semibold">Search & Review</h2>
-                  <p className="text-muted-foreground">Review interface coming soon!</p>
+          <div className="relative min-h-screen">
+            <div className="pb-20">
+              {activeTab === "feed" && <FeedPage />}
+              {activeTab === "leaderboard" && <LeaderboardPage />}
+              {activeTab === "map" && <MapPage />}
+              {activeTab === "search" && (
+                <div className="mobile-container bg-background flex items-center justify-center min-h-screen">
+                  <div className="text-center space-y-4">
+                    <h2 className="text-2xl font-semibold">Search & Review</h2>
+                    <p className="text-muted-foreground">Review interface coming soon!</p>
+                  </div>
                 </div>
-              </div>
-            )}
-            {activeTab === "profile" && <ProfilePage />}
+              )}
+              {activeTab === "profile" && <ProfilePage />}
+            </div>
             <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
           </div>
         );
