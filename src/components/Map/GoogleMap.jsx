@@ -17,6 +17,15 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
   console.log('🗝️ API Key available:', !!import.meta.env.VITE_GOOGLE_PLACES_API_KEY);
   console.log('🗝️ API Key type:', typeof import.meta.env.VITE_GOOGLE_PLACES_API_KEY);
   console.log('🗝️ API Key length:', import.meta.env.VITE_GOOGLE_PLACES_API_KEY?.length || 0);
+  console.log('🗝️ Raw API Key value:', import.meta.env.VITE_GOOGLE_PLACES_API_KEY);
+  
+  // Debug all environment variables
+  console.log('🌍 All Vite env variables:', {
+    ...Object.fromEntries(
+      Object.entries(import.meta.env).filter(([key]) => key.startsWith('VITE_'))
+    )
+  });
+  console.log('🌍 Available env keys:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
 
   // Custom map styles with purple theme and minimal POIs
   const mapStyles = [
