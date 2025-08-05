@@ -11,11 +11,104 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
   const [error, setError] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Simple map styles
+  // Comprehensive map styles focusing on cafes only
   const mapStyles = [
+    // Hide all POIs except food and drink
+    {
+      featureType: "poi",
+      stylers: [{ visibility: "off" }]
+    },
     {
       featureType: "poi.business",
       stylers: [{ visibility: "off" }]
+    },
+    {
+      featureType: "poi.government",
+      stylers: [{ visibility: "off" }]
+    },
+    {
+      featureType: "poi.school",
+      stylers: [{ visibility: "off" }]
+    },
+    {
+      featureType: "poi.medical",
+      stylers: [{ visibility: "off" }]
+    },
+    {
+      featureType: "poi.place_of_worship",
+      stylers: [{ visibility: "off" }]
+    },
+    {
+      featureType: "poi.sports_complex",
+      stylers: [{ visibility: "off" }]
+    },
+    {
+      featureType: "poi.park",
+      stylers: [{ visibility: "off" }]
+    },
+    {
+      featureType: "poi.attraction",
+      stylers: [{ visibility: "off" }]
+    },
+    // Keep only food and drink POIs but make them subtle
+    {
+      featureType: "poi.food_and_drink",
+      stylers: [
+        { visibility: "simplified" },
+        { saturation: -50 },
+        { lightness: 20 }
+      ]
+    },
+    // Simplify road styling
+    {
+      featureType: "road",
+      elementType: "labels",
+      stylers: [{ visibility: "simplified" }]
+    },
+    {
+      featureType: "road.highway",
+      elementType: "labels",
+      stylers: [{ visibility: "off" }]
+    },
+    {
+      featureType: "road.arterial",
+      elementType: "labels.text",
+      stylers: [{ visibility: "simplified" }]
+    },
+    {
+      featureType: "road.local",
+      elementType: "labels.text",
+      stylers: [{ visibility: "simplified" }]
+    },
+    // Simplify transit and administrative labels
+    {
+      featureType: "transit",
+      stylers: [{ visibility: "simplified" }]
+    },
+    {
+      featureType: "administrative",
+      elementType: "labels",
+      stylers: [{ visibility: "simplified" }]
+    },
+    {
+      featureType: "administrative.locality",
+      elementType: "labels.text",
+      stylers: [{ visibility: "on" }]
+    },
+    // Reduce water and landscape visual noise
+    {
+      featureType: "water",
+      stylers: [
+        { saturation: -20 },
+        { lightness: 10 }
+      ]
+    },
+    {
+      featureType: "landscape",
+      stylers: [
+        { saturation: -30 },
+        { lightness: 15 }
+      ]
     }
   ];
 
@@ -111,7 +204,11 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
           styles: mapStyles,
           disableDefaultUI: true,
           zoomControl: true,
-          gestureHandling: 'greedy'
+          gestureHandling: 'greedy',
+          clickableIcons: false, // Disable clicking on Google's default POIs
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false
         });
 
         console.log('✅ [STEP 4] Map created successfully');
