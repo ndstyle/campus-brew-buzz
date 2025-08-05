@@ -8,28 +8,44 @@ import GoogleMap from "@/components/Map/GoogleMap";
 
 const MapPage = ({ onAddReview }) => {
   const { user } = useAuth();
-  const { cafes, loading, error, fetchCafes, retryFetch } = useMapData();
+  const { cafes, loading, error, fetchCafes, retryFetch, testGooglePlacesAPI, setMapCenter: updateMapCenter } = useMapData();
   const [mapCenter, setMapCenter] = useState(null);
 
   // Get user's school coordinates
   useEffect(() => {
     if (user?.user_metadata?.college) {
       const coordinates = getSchoolCoordinates(user.user_metadata.college);
+      console.log('🎯 [MAP PAGE] Setting map center for college:', user.user_metadata.college, coordinates);
       setMapCenter(coordinates);
+      updateMapCenter(coordinates); // Also update the hook's map center
     } else {
       // Fallback to center US
-      setMapCenter({ lat: 39.8283, lng: -98.5795, zoom: 4 });
+      const fallbackCoords = { lat: 39.8283, lng: -98.5795, zoom: 4 };
+      console.log('🎯 [MAP PAGE] No college found, using fallback coordinates:', fallbackCoords);
+      setMapCenter(fallbackCoords);
+      updateMapCenter(fallbackCoords);
     }
-  }, [user]);
+  }, [user, updateMapCenter]);
 
-  // Fetch cafes when component mounts
+  // Fetch cafes when component mounts and map center is available
   useEffect(() => {
-    if (user?.user_metadata?.college) {
-      fetchCafes(user.user_metadata.college);
-    } else {
-      fetchCafes();
+    if (mapCenter) {
+      console.log('🚀 [MAP PAGE] Fetching cafes with center coordinates:', mapCenter);
+      if (user?.user_metadata?.college) {
+        fetchCafes(user.user_metadata.college, mapCenter);
+      } else {
+        fetchCafes(null, mapCenter);
+      }
     }
-  }, [user, fetchCafes]);
+  }, [user, fetchCafes, mapCenter]);
+
+  // Test Google Places API when map center is available
+  useEffect(() => {
+    if (mapCenter && testGooglePlacesAPI) {
+      console.log('🧪 [MAP PAGE] Testing Google Places API...');
+      testGooglePlacesAPI(mapCenter);
+    }
+  }, [mapCenter, testGooglePlacesAPI]);
 
   const handleAddReview = (cafe) => {
     if (onAddReview) {
