@@ -15,6 +15,7 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
   const [loadingStatus, setLoadingStatus] = useState('Initializing Google Maps...');
   const [apiKey, setApiKey] = useState(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [detailedError, setDetailedError] = useState(null);
 
   // Custom map styles with purple theme and minimal POIs
   const mapStyles = [
@@ -166,28 +167,48 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
     const initializeMap = async () => {
       try {
         console.log('🗺️ Starting Google Maps initialization...');
-        console.log('🗺️ Map center:', center);
-        console.log('🗺️ Map zoom:', zoom);
+        console.log('🗺️ Component state check:', {
+          isMounted,
+          mapRefExists: !!mapRef.current,
+          mapRefElement: mapRef.current,
+          centerCoords: center,
+          zoomLevel: zoom
+        });
         
         setLoadingStatus('Fetching API configuration...');
+        setDetailedError(null);
         
         let googleApiKey = apiKey;
         if (!googleApiKey) {
+          console.log('🔑 No cached API key, fetching from server...');
           googleApiKey = await fetchApiKey();
+        } else {
+          console.log('🔑 Using cached API key, length:', googleApiKey.length);
         }
         
         if (!googleApiKey) {
-          throw new Error('Google Maps API key not available from server');
+          const keyError = 'Google Maps API key not available from server';
+          console.error('❌', keyError);
+          setDetailedError(keyError);
+          throw new Error(keyError);
         }
         
-        console.log('✅ API key obtained, creating loader...');
+        console.log('✅ API key validated, creating loader...');
         setLoadingStatus('Creating Google Maps loader...');
         
-        const loader = new Loader({
-          apiKey: googleApiKey,
-          version: "weekly",
-          libraries: ["places", "marker"]
-        });
+        let loader;
+        try {
+          loader = new Loader({
+            apiKey: googleApiKey,
+            version: "weekly",
+            libraries: ["places", "marker"]
+          });
+          console.log('✅ Loader created successfully:', loader);
+        } catch (loaderError) {
+          console.error('❌ Failed to create loader:', loaderError);
+          setDetailedError(`Loader creation failed: ${loaderError.message}`);
+          throw loaderError;
+        }
 
         console.log('📡 Loading Google Maps API...');
         setLoadingStatus('Loading Google Maps API...');
@@ -196,60 +217,116 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
         const startTime = Date.now();
         
         try {
+          console.log('📡 Initiating API load request...');
           await Promise.race([
             loader.load(),
             new Promise((_, reject) => 
               setTimeout(() => reject(new Error('Google Maps API request timeout')), 15000)
             )
           ]);
+          console.log('✅ API load request completed successfully');
         } catch (networkError) {
           console.error('🚫 Network error loading Google Maps API:', networkError);
-          if (networkError.message.includes('timeout')) {
-            throw new Error('Network timeout: Unable to reach googleapis.com. Check your internet connection.');
-          }
-          throw new Error(`Network error: ${networkError.message}`);
+          const networkMsg = networkError.message.includes('timeout') 
+            ? 'Network timeout: Unable to reach googleapis.com. Check your internet connection.'
+            : `Network error: ${networkError.message}`;
+          setDetailedError(networkMsg);
+          throw new Error(networkMsg);
         }
         
         const loadTime = Date.now() - startTime;
         console.log(`✅ Google Maps API loaded successfully in ${loadTime}ms`);
         
+        // Verify Google Maps global is available
+        if (typeof google === 'undefined' || !google.maps) {
+          const globalError = 'Google Maps global object not available after API load';
+          console.error('❌', globalError);
+          setDetailedError(globalError);
+          throw new Error(globalError);
+        }
+        console.log('✅ Google Maps global object verified:', {
+          google: typeof google,
+          maps: typeof google.maps,
+          Map: typeof google.maps.Map
+        });
+        
         setLoadingStatus('Checking map container...');
         
         if (!mapRef.current) {
-          console.error('🚫 Map container not found');
-          throw new Error('Map container element not available');
+          const containerError = 'Map container element not available';
+          console.error('🚫', containerError);
+          setDetailedError(containerError);
+          throw new Error(containerError);
         }
         
-        console.log('✅ Map container found, creating map instance...');
+        console.log('✅ Map container verified:', {
+          element: mapRef.current,
+          tagName: mapRef.current.tagName,
+          className: mapRef.current.className,
+          dimensions: {
+            width: mapRef.current.offsetWidth,
+            height: mapRef.current.offsetHeight
+          }
+        });
+        
         setLoadingStatus('Creating map instance...');
 
-        const map = new google.maps.Map(mapRef.current, {
-          center,
-          zoom,
-          styles: mapStyles,
-          disableDefaultUI: true,
-          zoomControl: true,
-          zoomControlOptions: {
-            position: google.maps.ControlPosition.RIGHT_BOTTOM,
-            style: google.maps.ZoomControlStyle.SMALL
-          },
-          gestureHandling: 'greedy',
-          backgroundColor: '#f5f5f5'
-        });
+        let map;
+        try {
+          console.log('🗺️ Creating new Google Map instance with config:', {
+            center,
+            zoom,
+            stylesCount: mapStyles.length,
+            container: mapRef.current
+          });
+          
+          map = new google.maps.Map(mapRef.current, {
+            center,
+            zoom,
+            styles: mapStyles,
+            disableDefaultUI: true,
+            zoomControl: true,
+            zoomControlOptions: {
+              position: google.maps.ControlPosition.RIGHT_BOTTOM,
+              style: google.maps.ZoomControlStyle.SMALL
+            },
+            gestureHandling: 'greedy',
+            backgroundColor: '#f5f5f5'
+          });
+          
+          console.log('✅ Map instance created:', map);
+          console.log('✅ Map properties:', {
+            center: map.getCenter(),
+            zoom: map.getZoom(),
+            div: map.getDiv()
+          });
+        } catch (mapError) {
+          console.error('❌ Failed to create map instance:', mapError);
+          setDetailedError(`Map creation failed: ${mapError.message}`);
+          throw mapError;
+        }
 
-        console.log('✅ Map instance created successfully');
         mapInstanceRef.current = map;
         
         setLoadingStatus('Setting up map listeners...');
         
-        // Add click listener to close info card
-        map.addListener('click', () => {
-          setSelectedCafe(null);
-        });
+        try {
+          // Add click listener to close info card
+          map.addListener('click', () => {
+            console.log('🖱️ Map clicked');
+            setSelectedCafe(null);
+          });
+          console.log('✅ Map event listeners added');
+        } catch (listenerError) {
+          console.error('❌ Failed to add event listeners:', listenerError);
+          setDetailedError(`Event listener setup failed: ${listenerError.message}`);
+          throw listenerError;
+        }
         
         console.log('✅ Map initialization complete!');
         setMapLoading(false);
         setLoadingStatus('');
+        setDetailedError(null);
 
       } catch (err) {
         console.error('❌ Error loading Google Maps:', err);
@@ -360,6 +437,11 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
           <p className="text-sm text-muted-foreground">
             {loadingStatus || 'Loading map...'}
           </p>
+          {detailedError && (
+            <div className="text-xs text-destructive bg-destructive/10 p-2 rounded mt-2 max-w-md">
+              <strong>Error:</strong> {detailedError}
+            </div>
+          )}
           <p className="text-xs text-muted-foreground/70">
             Check console for detailed logs
           </p>
