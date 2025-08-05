@@ -11,55 +11,73 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
   const [error, setError] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Comprehensive map styles focusing on cafes only
+  // Balanced map styles - prominent custom markers, subtle Google POIs
   const mapStyles = [
-    // Hide all POIs except food and drink
+    // Make all POIs smaller and less prominent
     {
       featureType: "poi",
-      stylers: [{ visibility: "off" }]
+      elementType: "geometry",
+      stylers: [
+        { visibility: "simplified" },
+        { lightness: 40 },
+        { saturation: -60 }
+      ]
     },
     {
+      featureType: "poi",
+      elementType: "labels.icon",
+      stylers: [
+        { visibility: "simplified" },
+        { lightness: 60 },
+        { saturation: -80 },
+        { scale: 0.7 }
+      ]
+    },
+    {
+      featureType: "poi",
+      elementType: "labels.text",
+      stylers: [
+        { visibility: "simplified" },
+        { lightness: 40 },
+        { saturation: -50 }
+      ]
+    },
+    // Make business POIs even more subtle
+    {
       featureType: "poi.business",
-      stylers: [{ visibility: "off" }]
+      stylers: [
+        { visibility: "simplified" },
+        { lightness: 50 },
+        { saturation: -70 }
+      ]
+    },
+    // Schools and government - visible but very subtle
+    {
+      featureType: "poi.school",
+      stylers: [
+        { visibility: "simplified" },
+        { lightness: 45 },
+        { saturation: -65 }
+      ]
     },
     {
       featureType: "poi.government",
-      stylers: [{ visibility: "off" }]
-    },
-    {
-      featureType: "poi.school",
-      stylers: [{ visibility: "off" }]
-    },
-    {
-      featureType: "poi.medical",
-      stylers: [{ visibility: "off" }]
-    },
-    {
-      featureType: "poi.place_of_worship",
-      stylers: [{ visibility: "off" }]
-    },
-    {
-      featureType: "poi.sports_complex",
-      stylers: [{ visibility: "off" }]
-    },
-    {
-      featureType: "poi.park",
-      stylers: [{ visibility: "off" }]
-    },
-    {
-      featureType: "poi.attraction",
-      stylers: [{ visibility: "off" }]
-    },
-    // Keep only food and drink POIs but make them subtle
-    {
-      featureType: "poi.food_and_drink",
       stylers: [
         { visibility: "simplified" },
-        { saturation: -50 },
-        { lightness: 20 }
+        { lightness: 45 },
+        { saturation: -65 }
       ]
     },
-    // Simplify road styling
+    // Parks visible but muted
+    {
+      featureType: "poi.park",
+      stylers: [
+        { visibility: "simplified" },
+        { lightness: 30 },
+        { saturation: -40 }
+      ]
+    },
+    // Clean road styling
     {
       featureType: "road",
       elementType: "labels",
@@ -68,47 +86,28 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
     {
       featureType: "road.highway",
       elementType: "labels",
-      stylers: [{ visibility: "off" }]
-    },
-    {
-      featureType: "road.arterial",
-      elementType: "labels.text",
       stylers: [{ visibility: "simplified" }]
     },
-    {
-      featureType: "road.local",
-      elementType: "labels.text",
-      stylers: [{ visibility: "simplified" }]
-    },
-    // Simplify transit and administrative labels
-    {
-      featureType: "transit",
-      stylers: [{ visibility: "simplified" }]
-    },
-    {
-      featureType: "administrative",
-      elementType: "labels",
-      stylers: [{ visibility: "simplified" }]
-    },
-    {
-      featureType: "administrative.locality",
-      elementType: "labels.text",
-      stylers: [{ visibility: "on" }]
-    },
-    // Reduce water and landscape visual noise
+    // Muted water and landscape
     {
       featureType: "water",
       stylers: [
-        { saturation: -20 },
-        { lightness: 10 }
+        { saturation: -30 },
+        { lightness: 15 }
       ]
     },
     {
       featureType: "landscape",
       stylers: [
-        { saturation: -30 },
-        { lightness: 15 }
+        { saturation: -40 },
+        { lightness: 20 }
       ]
+    },
+    // Keep locality labels visible
+    {
+      featureType: "administrative.locality",
+      elementType: "labels.text",
+      stylers: [{ visibility: "on" }]
     }
   ];
 
