@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Coffee } from 'lucide-react';
 import CafeInfoCard from './CafeInfoCard';
+import { supabase } from '@/integrations/supabase/client';
 
 const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesLoading }) => {
   const mapRef = useRef(null);
@@ -12,20 +13,7 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
   const [selectedCafe, setSelectedCafe] = useState(null);
   const [error, setError] = useState(null);
   const [loadingStatus, setLoadingStatus] = useState('Initializing Google Maps...');
-
-  // Debug API key availability
-  console.log('🗝️ API Key available:', !!import.meta.env.VITE_GOOGLE_PLACES_API_KEY);
-  console.log('🗝️ API Key type:', typeof import.meta.env.VITE_GOOGLE_PLACES_API_KEY);
-  console.log('🗝️ API Key length:', import.meta.env.VITE_GOOGLE_PLACES_API_KEY?.length || 0);
-  console.log('🗝️ Raw API Key value:', import.meta.env.VITE_GOOGLE_PLACES_API_KEY);
-  
-  // Debug all environment variables
-  console.log('🌍 All Vite env variables:', {
-    ...Object.fromEntries(
-      Object.entries(import.meta.env).filter(([key]) => key.startsWith('VITE_'))
-    )
-  });
-  console.log('🌍 Available env keys:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
+  const [apiKey, setApiKey] = useState(null);
 
   // Custom map styles with purple theme and minimal POIs
   const mapStyles = [
@@ -137,6 +125,30 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
     }
   ];
 
+  // Fetch API key from Supabase Edge Function
+  const fetchApiKey = async () => {
+    try {
+      console.log('🔑 Fetching Google Maps API key from edge function...');
+      const { data, error } = await supabase.functions.invoke('google-maps-config');
+      
+      if (error) {
+        console.error('❌ Error fetching API key:', error);
+        throw error;
+      }
+      
+      if (!data?.apiKey) {
+        throw new Error('No API key returned from server');
+      }
+      
+      console.log('✅ API key fetched successfully, length:', data.apiKey.length);
+      setApiKey(data.apiKey);
+      return data.apiKey;
+    } catch (err) {
+      console.error('❌ Failed to fetch API key:', err);
+      throw new Error('Failed to fetch Google Maps configuration from server');
+    }
+  };
+
   // Initialize Google Maps
   useEffect(() => {
     const initializeMap = async () => {
@@ -145,18 +157,22 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
         console.log('🗺️ Map center:', center);
         console.log('🗺️ Map zoom:', zoom);
         
-        setLoadingStatus('Checking API key...');
+        setLoadingStatus('Fetching API configuration...');
         
-        const apiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
-        if (!apiKey) {
-          throw new Error('Google Places API key not found in environment variables');
+        let googleApiKey = apiKey;
+        if (!googleApiKey) {
+          googleApiKey = await fetchApiKey();
         }
         
-        console.log('✅ API key found, creating loader...');
+        if (!googleApiKey) {
+          throw new Error('Google Maps API key not available from server');
+        }
+        
+        console.log('✅ API key obtained, creating loader...');
         setLoadingStatus('Creating Google Maps loader...');
         
         const loader = new Loader({
-          apiKey: apiKey,
+          apiKey: googleApiKey,
           version: "weekly",
           libraries: ["places", "marker"]
         });
@@ -233,8 +249,8 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
         
         let errorMessage = 'Failed to load map. ';
         
-        if (err.message.includes('API key')) {
-          errorMessage += 'API key issue detected.';
+        if (err.message.includes('API key') || err.message.includes('configuration')) {
+          errorMessage += 'API key configuration issue.';
         } else if (err.message.includes('Network') || err.message.includes('timeout')) {
           errorMessage += 'Network connectivity issue.';
         } else if (err.message.includes('container')) {
@@ -250,7 +266,7 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
     };
 
     initializeMap();
-  }, [center, zoom]);
+  }, [center, zoom, apiKey]);
 
   // Create custom marker icon
   const createMarkerIcon = (isSelected = false, hasUserReview = false) => {
