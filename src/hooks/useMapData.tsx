@@ -147,7 +147,7 @@ export const useMapData = () => {
       return;
     }
     
-    await testPlacesAPI(center);
+    await testPlacesAPI();
   }, [testPlacesAPI]);
 
   // Set up real-time subscription for new cafes
