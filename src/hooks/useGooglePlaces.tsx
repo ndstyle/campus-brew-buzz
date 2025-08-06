@@ -5,7 +5,6 @@ import { useToast } from '@/hooks/use-toast';
 export const useGooglePlaces = () => {
   const [placesLoading, setPlacesLoading] = useState(false);
   const [placesError, setPlacesError] = useState(null);
-  const [apiKey, setApiKey] = useState(null);
   const { toast } = useToast();
 
   // Debug log helper
@@ -13,185 +12,129 @@ export const useGooglePlaces = () => {
     console.log(`🔍 [PLACES DEBUG] ${message}`, data || '');
   };
 
-  // Fetch API key from Supabase Edge Function
-  const getApiKey = useCallback(async () => {
-    try {
-      debugLog('Fetching Google Places API key...');
-      const { data, error } = await supabase.functions.invoke('google-maps-config');
-      
-      if (error) {
-        debugLog('❌ API key fetch error:', error);
-        throw error;
-      }
-      
-      if (!data?.apiKey) {
-        debugLog('❌ No API key in response:', data);
-        throw new Error('No API key returned from server');
-      }
-      
-      debugLog('✅ API key fetched successfully, length:', data.apiKey.length);
-      setApiKey(data.apiKey);
-      return data.apiKey;
-    } catch (err) {
-      debugLog('❌ Failed to fetch API key:', err);
-      throw err;
-    }
-  }, []);
-
-  // Search for places using Google Places API
+  // Search for places using Supabase Edge Function (fixes CORS issue)
   const searchNearbyPlaces = useCallback(async (center, radius = 2000) => {
     setPlacesLoading(true);
     setPlacesError(null);
     
     try {
-      debugLog('🚀 Starting Google Places search', { center, radius });
+      debugLog('🚀 Starting Google Places search via Edge Function', { center, radius });
       
-      // Get API key if not already available
-      let currentApiKey = apiKey;
-      if (!currentApiKey) {
-        debugLog('🔑 Getting API key...');
-        currentApiKey = await getApiKey();
-      }
-
-      // Multiple place types to try
-      const placeTypes = ['cafe', 'restaurant', 'food', 'meal_takeaway'];
-      let allPlaces = [];
-
-      for (const placeType of placeTypes) {
-        debugLog(`🔍 Searching for places of type: ${placeType}`);
-        
-        // Construct the Places API URL
-        const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${center.lat},${center.lng}&radius=${radius}&type=${placeType}&key=${currentApiKey}`;
-        
-        debugLog('📡 Places API Request URL:', placesUrl.replace(currentApiKey, '[API_KEY_HIDDEN]'));
-        
-        try {
-          const response = await fetch(placesUrl);
-          debugLog(`📥 Places API Response Status (${placeType}):`, response.status);
-          
-          if (!response.ok) {
-            debugLog(`❌ Places API HTTP Error (${placeType}):`, response.statusText);
-            continue;
-          }
-          
-          const data = await response.json();
-          debugLog(`📊 Places API Response Data (${placeType}):`, {
-            status: data.status,
-            resultsCount: data.results?.length || 0,
-            nextPageToken: !!data.next_page_token
-          });
-          
-          if (data.status !== 'OK') {
-            debugLog(`⚠️ Places API Status Error (${placeType}):`, { status: data.status, error: data.error_message });
-            continue;
-          }
-          
-          // Log first few results for debugging
-          if (data.results && data.results.length > 0) {
-            debugLog(`📍 First 3 places found for ${placeType}:`, 
-              data.results.slice(0, 3).map(place => ({
-                name: place.name,
-                place_id: place.place_id,
-                types: place.types,
-                rating: place.rating,
-                lat: place.geometry?.location?.lat,
-                lng: place.geometry?.location?.lng
-              }))
-            );
-            
-            // Transform and add to our results
-            const transformedPlaces = data.results.map(place => ({
-              id: place.place_id,
-              name: place.name,
-              lat: place.geometry?.location?.lat,
-              lng: place.geometry?.location?.lng,
-              address: place.vicinity || place.formatted_address,
-              google_place_id: place.place_id,
-              rating: place.rating || 0,
-              user_ratings_total: place.user_ratings_total || 0,
-              types: place.types || [],
-              source: 'google_places',
-              placeType: placeType,
-              // Additional debug info
-              price_level: place.price_level,
-              permanently_closed: place.permanently_closed,
-              opening_hours: place.opening_hours
-            }));
-            
-            allPlaces.push(...transformedPlaces);
-          } else {
-            debugLog(`📭 No places found for type: ${placeType}`);
-          }
-          
-        } catch (fetchError) {
-          debugLog(`❌ Network error for ${placeType}:`, fetchError);
+      // Call the Supabase Edge Function instead of direct API call
+      const { data, error } = await supabase.functions.invoke('places-search', {
+        body: {
+          searchQuery: 'coffee cafe',
+          location: {
+            lat: center.lat,
+            lng: center.lng
+          },
+          radius: radius
         }
-      }
-      
-      // Remove duplicates based on place_id
-      const uniquePlaces = allPlaces.reduce((unique, place) => {
-        if (!unique.find(p => p.google_place_id === place.google_place_id)) {
-          unique.push(place);
-        }
-        return unique;
-      }, []);
-      
-      debugLog('🎯 Final results summary:', {
-        totalPlacesFound: allPlaces.length,
-        uniquePlacesFound: uniquePlaces.length,
-        placeTypesSearched: placeTypes,
-        searchRadius: radius,
-        searchCenter: center
       });
-      
-      if (uniquePlaces.length === 0) {
-        debugLog('⚠️ No places found - checking common issues:', {
-          'API key valid': !!currentApiKey,
-          'Center coordinates': center,
-          'Radius': radius,
-          'Place types': placeTypes,
-          'Suggestion': 'Try increasing radius or checking if location has cafes nearby'
-        });
+
+      if (error) {
+        debugLog('❌ Edge Function error:', error);
+        throw error;
       }
+
+      debugLog('📊 Edge Function Response:', {
+        status: data.status,
+        resultsCount: data.results?.length || 0,
+      });
+
+      if (data.status !== 'OK') {
+        debugLog('⚠️ Places API Status Error:', { status: data.status, error: data.error });
+        throw new Error(`Places API error: ${data.status}`);
+      }
+
+      // Transform the results to match your expected format
+      const places = (data.results || []).map(place => ({
+        place_id: place.place_id,
+        name: place.name,
+        vicinity: place.vicinity || 'Address not available',
+        rating: place.rating || 0,
+        user_ratings_total: place.user_ratings_total || 0,
+        price_level: place.price_level,
+        lat: place.geometry.location.lat,
+        lng: place.geometry.location.lng,
+        photos: place.photos || [],
+        opening_hours: place.opening_hours,
+        types: place.types || [],
+        source: 'google'
+      }));
+
+      debugLog('✅ Successfully processed places:', places.length);
       
-      return uniquePlaces;
-      
+      if (places.length > 0) {
+        debugLog('📍 First 3 places found:', 
+          places.slice(0, 3).map(place => ({
+            name: place.name,
+            place_id: place.place_id,
+            rating: place.rating,
+            lat: place.lat,
+            lng: place.lng
+          }))
+        );
+      }
+
+      setPlacesLoading(false);
+      return places;
+
     } catch (err) {
       debugLog('❌ Places search failed:', err);
       setPlacesError(err.message);
+      setPlacesLoading(false);
+      
       toast({
         title: "Places Search Error",
-        description: `Failed to search for places: ${err.message}`,
-        variant: "destructive"
+        description: `Failed to load nearby cafes: ${err.message}`,
+        variant: "destructive",
       });
+      
       return [];
-    } finally {
-      setPlacesLoading(false);
     }
-  }, [apiKey, getApiKey, toast]);
+  }, [toast]);
 
-  // Test function to verify Places API is working
-  const testPlacesAPI = useCallback(async (center) => {
-    debugLog('🧪 Testing Places API with increased radius...');
+  // Test the Places API connection
+  const testPlacesAPI = useCallback(async () => {
+    debugLog('🧪 Testing Places API via Edge Function...');
     
-    // Test with very large radius to ensure we get results
-    const testRadii = [1000, 5000, 10000, 25000];
-    
-    for (const radius of testRadii) {
-      debugLog(`🧪 Testing radius: ${radius}m`);
-      const results = await searchNearbyPlaces(center, radius);
+    try {
+      // Test with a known location (San Francisco)
+      const testCenter = { lat: 37.7749, lng: -122.4194 };
+      const results = await searchNearbyPlaces(testCenter, 1000);
+      
       if (results.length > 0) {
-        debugLog(`✅ Success! Found ${results.length} places with ${radius}m radius`);
-        break;
+        debugLog('✅ Places API test successful:', `${results.length} places found`);
+        toast({
+          title: "Places API Test Successful",
+          description: `Found ${results.length} places near test location`,
+        });
+        return true;
+      } else {
+        debugLog('⚠️ Places API test returned no results');
+        toast({
+          title: "Places API Test Warning",
+          description: "API is working but no places found in test area",
+          variant: "destructive",
+        });
+        return false;
       }
+    } catch (err) {
+      debugLog('❌ Places API test failed:', err);
+      toast({
+        title: "Places API Test Failed",
+        description: err.message,
+        variant: "destructive",
+      });
+      return false;
     }
-  }, [searchNearbyPlaces]);
+  }, [searchNearbyPlaces, toast]);
 
   return {
     searchNearbyPlaces,
     testPlacesAPI,
     placesLoading,
-    placesError,
-    apiKey
+    placesError
   };
 };
