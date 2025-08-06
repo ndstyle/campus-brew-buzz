@@ -26,7 +26,14 @@ serve(async (req) => {
 
     const GOOGLE_PLACES_API_KEY = Deno.env.get('GOOGLE_PLACES_API_KEY')
     
+    console.log('🔑 API Key status:', {
+      exists: !!GOOGLE_PLACES_API_KEY,
+      length: GOOGLE_PLACES_API_KEY?.length || 0,
+      firstChars: GOOGLE_PLACES_API_KEY?.substring(0, 10) || 'none'
+    })
+    
     if (!GOOGLE_PLACES_API_KEY) {
+      console.error('❌ GOOGLE_PLACES_API_KEY not found in environment variables')
       return new Response(
         JSON.stringify({ error: 'Google Places API key not configured' }),
         { 
