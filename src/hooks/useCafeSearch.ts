@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
 
 // Campus coordinates for Google Places search
 const CAMPUS_COORDINATES: { [key: string]: { lat: number; lng: number } } = {
@@ -133,11 +134,11 @@ export const useCafeSearch = () => {
         .filter((place: any) => place.name && place.place_id)
         .slice(0, 5) // Limit to top 5 results
         .map((place: any) => ({
-          id: place.place_id,
+          id: uuidv4(), // Generate UUID for database operations
           name: place.name,
           address: place.vicinity || place.formatted_address,
           campus: campus,
-          google_place_id: place.place_id,
+          google_place_id: place.place_id, // Keep Google Places ID for Maps integration
         }));
 
       console.log("🔍 [GOOGLE PLACES] Transformed results:", transformedResults);
