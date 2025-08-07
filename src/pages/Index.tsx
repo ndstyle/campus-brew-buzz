@@ -11,6 +11,7 @@ import CoffeeShopDetail from "@/components/CoffeeShopDetail";
 import BottomNavigation from "@/components/BottomNavigation";
 import Editor from "@/pages/Editor";
 import Preview from "@/pages/Preview";
+import CampusDebugger from "@/components/CampusDebugger";
 import { useAuth } from "@/contexts/AuthContext";
 
 type AppState = "landing" | "auth" | "signin" | "onboarding" | "app";
@@ -82,6 +83,8 @@ const Index = () => {
       case "app":
         return (
           <div className="relative min-h-screen">
+            {/* Debug component - invisible but logs campus data */}
+            <CampusDebugger />
             <div className="pb-20">
               {currentView === "feed" && (
                 <FeedPage 

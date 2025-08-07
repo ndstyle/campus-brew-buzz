@@ -13,15 +13,26 @@ const MapPage = ({ onAddReview }) => {
 
   // Get user's school coordinates
   useEffect(() => {
+    console.log("🎯 [MAP PAGE] User object:", user);
+    console.log("🎯 [MAP PAGE] User metadata:", user?.user_metadata);
+    console.log("🎯 [MAP PAGE] User college from metadata:", user?.user_metadata?.college);
+    
     if (user?.user_metadata?.college) {
       const coordinates = getSchoolCoordinates(user.user_metadata.college);
-      console.log('🎯 [MAP PAGE] Setting map center for college:', user.user_metadata.college, coordinates);
+      console.log('🎯 [MAP PAGE] Setting map center for college:', user.user_metadata.college);
+      console.log('🎯 [MAP PAGE] Campus coordinates retrieved:', coordinates);
+      console.log('🎯 [MAP PAGE] Expected for UIUC: ~40.1020, -88.2272');
+      console.log('🎯 [MAP PAGE] Expected for UCLA: ~34.0689, -118.4452');
       setMapCenter(coordinates);
       updateMapCenter(coordinates); // Also update the hook's map center
     } else {
+      // Check if user has college in users table instead
+      console.log('🎯 [MAP PAGE] No college in metadata, checking users table...');
+      // This should be handled by useUserCampus hook instead
+      
       // Fallback to center US
       const fallbackCoords = { lat: 39.8283, lng: -98.5795, zoom: 4 };
-      console.log('🎯 [MAP PAGE] No college found, using fallback coordinates:', fallbackCoords);
+      console.log('🎯 [MAP PAGE] No college found anywhere, using fallback coordinates:', fallbackCoords);
       setMapCenter(fallbackCoords);
       updateMapCenter(fallbackCoords);
     }

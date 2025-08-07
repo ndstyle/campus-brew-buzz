@@ -11,6 +11,10 @@ const CAMPUS_COORDINATES: { [key: string]: { lat: number; lng: number } } = {
   'University of California, Berkeley': { lat: 37.8719, lng: -122.2585 },
   'USC': { lat: 34.0224, lng: -118.2851 },
   'Stanford': { lat: 37.4419, lng: -122.1430 },
+  'University of Illinois Urbana-Champaign': { lat: 40.1020, lng: -88.2272 },
+  'UIUC': { lat: 40.1020, lng: -88.2272 },
+  'University of Illinois': { lat: 40.1020, lng: -88.2272 },
+  'Illinois': { lat: 40.1020, lng: -88.2272 },
   // Add more campuses as needed
 };
 

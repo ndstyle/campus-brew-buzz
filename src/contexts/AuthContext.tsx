@@ -57,9 +57,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, userData: UserData) => {
     try {
+      console.log("🔐 [AUTH CONTEXT] Starting signup process for:", email);
+      console.log("🔐 [AUTH CONTEXT] User metadata being saved:", userData);
+      
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -73,21 +76,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
+      console.log("🔐 [AUTH CONTEXT] Supabase auth response:", { data, error });
+
       if (error) {
+        console.error('🔐 [AUTH CONTEXT] Sign up error:', error);
         toast({
           title: "Sign up failed",
           description: error.message,
           variant: "destructive"
         });
       } else {
+        // Additional verification: Check if user was created and college was saved
+        if (data.user) {
+          console.log("🔐 [AUTH CONTEXT] User created successfully:", data.user.id);
+          console.log("🔐 [AUTH CONTEXT] User metadata:", data.user.user_metadata);
+          console.log("🔐 [AUTH CONTEXT] College in metadata:", data.user.user_metadata?.college);
+          
+          // Verify college was saved to database (with a delay for DB trigger)
+          setTimeout(async () => {
+            try {
+              const { data: userDbData, error: fetchError } = await supabase
+                .from('users')
+                .select('college')
+                .eq('id', data.user.id)
+                .single();
+              
+              console.log("🔐 [AUTH CONTEXT] Database verification result:", { userDbData, fetchError });
+              if (userDbData?.college) {
+                console.log("✅ [AUTH CONTEXT] Campus saved successfully to database:", userDbData.college);
+              } else {
+                console.warn("⚠️ [AUTH CONTEXT] Campus NOT found in database!");
+              }
+            } catch (dbError) {
+              console.error("🔐 [AUTH CONTEXT] Database verification failed:", dbError);
+            }
+          }, 2000);
+        }
+
         toast({
           title: "Welcome to RateUrCoffee!",
-          description: "Your account has been created successfully."
+          description: `Campus set to: ${userData.college}. Your account has been created successfully.`
         });
       }
 
       return { error };
     } catch (error: any) {
+      console.error('🔐 [AUTH CONTEXT] Unexpected sign up error:', error);
       const errorMessage = error?.message || "An unexpected error occurred";
       toast({
         title: "Sign up failed",

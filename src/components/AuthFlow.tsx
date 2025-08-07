@@ -100,17 +100,29 @@ const AuthFlow = ({ onBack, onComplete }: { onBack: () => void; onComplete: () =
       // Complete registration with Supabase
       setIsLoading(true);
       
-      const { error } = await signUp(authData.email, authData.password, {
+      console.log("🎓 [AUTH FLOW] Onboarding form submitted:", authData);
+      console.log("🎓 [AUTH FLOW] College being sent to signup:", authData.college);
+      
+      const signUpData = {
         firstName: authData.firstName,
         lastName: authData.lastName,
         username: authData.username,
         college: authData.college
-      });
+      };
+      
+      console.log("🎓 [AUTH FLOW] Updating user profile with:", signUpData);
+      
+      const { error } = await signUp(authData.email, authData.password, signUpData);
 
+      console.log("🎓 [AUTH FLOW] Profile update response:", { error });
+      
       setIsLoading(false);
       
       if (!error) {
+        console.log("🎓 [AUTH FLOW] Registration successful, campus should be saved:", authData.college);
         onComplete();
+      } else {
+        console.error("🎓 [AUTH FLOW] Registration failed:", error);
       }
     }
   };
