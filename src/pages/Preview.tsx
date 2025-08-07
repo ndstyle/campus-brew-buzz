@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star, Heart, MessageCircle, Share, MapPin, Clock, ArrowLeft } from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PreviewProps {
   review?: any;
@@ -12,31 +14,74 @@ interface PreviewProps {
 
 const Preview = ({ review, onBack }: PreviewProps) => {
   const [isLiked, setIsLiked] = useState(false);
+  const [userDetails, setUserDetails] = useState(null);
+  const [cafeDetails, setCafeDetails] = useState(null);
+  const { user } = useAuth();
 
-  const mockReview = {
-    id: "1",
-    user: {
-      name: "Sarah Chen",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b612c108?w=32&h=32&fit=crop&crop=face",
-      username: "@sarahc",
-      university: "NYU"
+  // Fetch user and cafe details if not provided in review
+  useEffect(() => {
+    const fetchDetails = async () => {
+      if (!review) return;
+
+      try {
+        // Fetch user details if needed
+        if (!review.user && review.user_id) {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('first_name, last_name, username')
+            .eq('id', review.user_id)
+            .single();
+          
+          if (userData) {
+            setUserDetails({
+              name: `${userData.first_name} ${userData.last_name}`,
+              username: userData.username
+            });
+          }
+        }
+
+        // Fetch cafe details if needed
+        if (!review.cafe && review.cafe_id) {
+          const { data: cafeData } = await supabase
+            .from('cafes')
+            .select('name, campus, address')
+            .eq('id', review.cafe_id)
+            .single();
+          
+          if (cafeData) {
+            setCafeDetails(cafeData);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching preview details:', error);
+      }
+    };
+
+    fetchDetails();
+  }, [review]);
+
+  // Use provided review data or create preview data from current user
+  const displayReview = review ? {
+    ...review,
+    user: review.user || userDetails || {
+      name: user ? `${user.user_metadata?.first_name} ${user.user_metadata?.last_name}` : 'You',
+      username: user?.user_metadata?.username || 'you'
     },
-    cafe: {
-      name: "Blue Bottle Coffee",
-      location: "Greenwich Village",
-      address: "54 Mint Plaza, New York, NY"
+    cafe: review.cafe || cafeDetails || {
+      name: 'Selected Cafe',
+      campus: 'Your Campus'
     },
-    rating: 8.5,
-    categories: ["Atmosphere", "Coffee Quality", "Service"],
-    reviewText: "Absolutely loved this place! The atmosphere is perfect for studying with plenty of natural light and comfortable seating. Their single-origin pour-over was exceptional - rich, smooth, and perfectly balanced. The baristas are incredibly knowledgeable and friendly. Definitely my new go-to spot for morning coffee before classes.",
-    photos: [
-      "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop"
-    ],
-    timestamp: "2 hours ago",
-    likes: 24,
-    comments: 8
-  };
+    rating: Number(review.rating || 0),
+    timestamp: 'Just now'
+  } : null;
+
+  if (!displayReview) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-muted-foreground">No review data to preview</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mobile-container bg-background min-h-screen">
@@ -61,62 +106,68 @@ const Preview = ({ review, onBack }: PreviewProps) => {
           {/* User Info */}
           <div className="flex items-center space-x-3 mb-4">
             <Avatar className="w-10 h-10">
-              <AvatarImage src={mockReview.user.avatar} alt={mockReview.user.name} />
-              <AvatarFallback>{mockReview.user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+              <AvatarFallback>{displayReview.user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <div className="flex items-center space-x-2">
-                <h3 className="font-semibold text-foreground">{mockReview.user.name}</h3>
-                <Badge variant="secondary" className="text-xs">{mockReview.user.university}</Badge>
+                <h3 className="font-semibold text-foreground">{displayReview.user.name}</h3>
+                {displayReview.cafe.campus && (
+                  <Badge variant="secondary" className="text-xs">{displayReview.cafe.campus}</Badge>
+                )}
               </div>
-              <p className="text-sm text-muted-foreground">{mockReview.user.username}</p>
+              <p className="text-sm text-muted-foreground">@{displayReview.user.username}</p>
             </div>
             <div className="text-right">
               <div className="flex items-center space-x-1 mb-1">
                 <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                <span className="font-bold text-lg">{mockReview.rating}</span>
+                <span className="font-bold text-lg">{displayReview.rating.toFixed(1)}</span>
               </div>
               <div className="flex items-center text-xs text-muted-foreground">
                 <Clock className="w-3 h-3 mr-1" />
-                {mockReview.timestamp}
+                {displayReview.timestamp}
               </div>
             </div>
           </div>
 
           {/* Cafe Info */}
           <div className="mb-4">
-            <h4 className="font-semibold text-foreground text-lg mb-1">{mockReview.cafe.name}</h4>
-            <div className="flex items-center text-sm text-muted-foreground">
-              <MapPin className="w-3 h-3 mr-1" />
-              {mockReview.cafe.location}
-            </div>
+            <h4 className="font-semibold text-foreground text-lg mb-1">{displayReview.cafe.name}</h4>
+            {displayReview.cafe.campus && (
+              <div className="flex items-center text-sm text-muted-foreground">
+                <MapPin className="w-3 h-3 mr-1" />
+                {displayReview.cafe.campus}
+              </div>
+            )}
           </div>
 
           {/* Categories */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            {mockReview.categories.map((category, index) => (
-              <Badge key={index} variant="outline" className="text-xs">
-                {category}
-              </Badge>
-            ))}
-          </div>
+          {displayReview.categories && displayReview.categories.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {displayReview.categories.map((category, index) => (
+                <Badge key={index} variant="outline" className="text-xs">
+                  {category}
+                </Badge>
+              ))}
+            </div>
+          )}
 
           {/* Photos */}
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            {mockReview.photos.map((photo, index) => (
+          {displayReview.photo_url && (
+            <div className="grid grid-cols-1 gap-2 mb-4">
               <img
-                key={index}
-                src={photo}
-                alt={`Review photo ${index + 1}`}
-                className="w-full h-32 object-cover rounded-lg"
+                src={displayReview.photo_url}
+                alt="Review photo"
+                className="w-full h-48 object-cover rounded-lg"
               />
-            ))}
-          </div>
+            </div>
+          )}
 
           {/* Review Text */}
-          <p className="text-foreground mb-4 leading-relaxed">
-            {mockReview.reviewText}
-          </p>
+          {(displayReview.blurb || displayReview.text) && (
+            <p className="text-foreground mb-4 leading-relaxed">
+              {displayReview.blurb || displayReview.text}
+            </p>
+          )}
 
           {/* Interaction Buttons */}
           <div className="flex items-center justify-between pt-3 border-t border-border">
@@ -126,11 +177,11 @@ const Preview = ({ review, onBack }: PreviewProps) => {
                 className="flex items-center space-x-1 text-muted-foreground hover:text-red-500 transition-colors"
               >
                 <Heart className={`w-5 h-5 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
-                <span className="text-sm">{mockReview.likes + (isLiked ? 1 : 0)}</span>
+                <span className="text-sm">{(displayReview.likes || 0) + (isLiked ? 1 : 0)}</span>
               </button>
               <button className="flex items-center space-x-1 text-muted-foreground hover:text-primary transition-colors">
                 <MessageCircle className="w-5 h-5" />
-                <span className="text-sm">{mockReview.comments}</span>
+                <span className="text-sm">{displayReview.comments || 0}</span>
               </button>
             </div>
             <button className="flex items-center space-x-1 text-muted-foreground hover:text-primary transition-colors">

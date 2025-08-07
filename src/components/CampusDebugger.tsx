@@ -7,6 +7,7 @@ import { getSchoolCoordinates } from "@/utils/schoolCoordinates";
 const CampusDebugger = () => {
   const { user } = useAuth();
   const { campus, loading } = useUserCampus();
+  const { getUniversityCoordinates } = useUniversities();
 
   useEffect(() => {
     const runDiagnostics = async () => {

@@ -3,57 +3,42 @@ import { Button } from "@/components/ui/button";
 import { Bell, Menu, AlertCircle, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMapData } from "@/hooks/useMapData";
-import { getSchoolCoordinates } from "@/utils/schoolCoordinates";
+import { useUniversities } from '@/hooks/useUniversities';
+import { useUserCampus } from '@/hooks/useUserCampus';
 import GoogleMap from "@/components/Map/GoogleMap";
 
 const MapPage = ({ onAddReview }) => {
   const { user } = useAuth();
-  const { cafes, loading, error, fetchCafes, retryFetch, testGooglePlacesAPI, setMapCenter: updateMapCenter } = useMapData();
-  const [mapCenter, setMapCenter] = useState(null);
+  const { cafes, loading, error, fetchCafes, retryFetch, testGooglePlacesAPI, setMapCenter } = useMapData();
+  const { getUniversityCoordinates, loading: universitiesLoading } = useUniversities();
+  const { campus, loading: campusLoading } = useUserCampus();
+  
+  // Get initial map center based on user's college from database
+  const [mapCenter, setLocalMapCenter] = useState(null);
 
-  // Get user's school coordinates
+  // Update map center when campus is loaded
   useEffect(() => {
-    console.log("🎯 [MAP PAGE] User object:", user);
-    console.log("🎯 [MAP PAGE] User metadata:", user?.user_metadata);
-    console.log("🎯 [MAP PAGE] User college from metadata:", user?.user_metadata?.college);
-    
-    if (user?.user_metadata?.college) {
-      const coordinates = getSchoolCoordinates(user.user_metadata.college);
-      console.log('🎯 [MAP PAGE] Setting map center for college:', user.user_metadata.college);
-      console.log('🎯 [MAP PAGE] Campus coordinates retrieved:', coordinates);
-      console.log('🎯 [MAP PAGE] Expected for UIUC: ~40.1020, -88.2272');
-      console.log('🎯 [MAP PAGE] Expected for UCLA: ~34.0689, -118.4452');
-      setMapCenter(coordinates);
-      updateMapCenter(coordinates); // Also update the hook's map center
-    } else {
-      // Check if user has college in users table instead
-      console.log('🎯 [MAP PAGE] No college in metadata, checking users table...');
-      // This should be handled by useUserCampus hook instead
-      
-      // Fallback to center US
-      const fallbackCoords = { lat: 39.8283, lng: -98.5795, zoom: 4 };
-      console.log('🎯 [MAP PAGE] No college found anywhere, using fallback coordinates:', fallbackCoords);
-      setMapCenter(fallbackCoords);
-      updateMapCenter(fallbackCoords);
+    if (!campusLoading && campus && !universitiesLoading) {
+      console.log('🗺️ [MAP PAGE] Setting map center for campus:', campus);
+      const coordinates = getUniversityCoordinates(campus);
+      console.log('🗺️ [MAP PAGE] Campus coordinates:', coordinates);
+      setLocalMapCenter(coordinates);
     }
-  }, [user, updateMapCenter]);
+  }, [campus, campusLoading, universitiesLoading, getUniversityCoordinates]);
 
-  // Fetch cafes when component mounts and map center is available
+  // Fetch coffee shops when map center is available
   useEffect(() => {
-    if (mapCenter) {
-      console.log('🚀 [MAP PAGE] Fetching cafes with center coordinates:', mapCenter);
-      if (user?.user_metadata?.college) {
-        fetchCafes(user.user_metadata.college, mapCenter);
-      } else {
-        fetchCafes(null, mapCenter);
-      }
+    if (mapCenter && campus) {
+      console.log('🗺️ [MAP PAGE] Fetching cafes for campus:', campus, 'at coordinates:', mapCenter);
+      setMapCenter(mapCenter);
+      fetchCafes(campus, mapCenter);
     }
-  }, [user, fetchCafes, mapCenter]);
+  }, [mapCenter, campus, fetchCafes, setMapCenter]);
 
   // Test Google Places API when map center is available
   useEffect(() => {
-    if (mapCenter && testGooglePlacesAPI) {
-      console.log('🧪 [MAP PAGE] Testing Google Places API...');
+    if (mapCenter) {
+      console.log('🗺️ [MAP PAGE] Testing Google Places API at coordinates:', mapCenter);
       testGooglePlacesAPI(mapCenter);
     }
   }, [mapCenter, testGooglePlacesAPI]);
@@ -97,7 +82,14 @@ const MapPage = ({ onAddReview }) => {
           <div className="w-full h-full bg-muted/30 flex items-center justify-center">
             <div className="text-center space-y-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground">Loading map...</p>
+              <p className="text-muted-foreground">
+                {campusLoading || universitiesLoading ? 'Loading campus data...' : 'Loading map...'}
+              </p>
+              {!campusLoading && !universitiesLoading && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Campus: {campus || 'Unknown'}
+                </p>
+              )}
             </div>
           </div>
         )}

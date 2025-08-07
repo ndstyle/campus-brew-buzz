@@ -266,6 +266,48 @@ export type Database = {
           },
         ]
       }
+      universities: {
+        Row: {
+          aliases: Json | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          default_zoom: number | null
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          state_province: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          aliases?: Json | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          default_zoom?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          name: string
+          state_province?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          aliases?: Json | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          default_zoom?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string
+          state_province?: string | null
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
       user_stats: {
         Row: {
           created_at: string | null

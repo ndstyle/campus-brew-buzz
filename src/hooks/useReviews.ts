@@ -4,13 +4,21 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface ReviewSubmission {
-  cafeId: string; // UUID for database
+  cafeId?: string; // UUID for database
   cafeName: string;
   rating: number;
   notes: string;
   photoUrl?: string;
   categories?: string[];
   googlePlaceId?: string; // Google Places ID for Maps integration
+  cafeDetails?: {
+    name: string;
+    address?: string;
+    campus?: string;
+    google_place_id?: string;
+    lat?: number;
+    lng?: number;
+  };
 }
 
 export const useReviews = () => {
@@ -19,74 +27,62 @@ export const useReviews = () => {
   const { user } = useAuth();
 
   const submitReview = useCallback(async (reviewData: ReviewSubmission) => {
-    console.log("=== REVIEW SUBMISSION PAYLOAD ===");
-    console.log("user_id:", user?.id);
-    console.log("user_id type:", typeof user?.id);
-    console.log("cafeId being sent:", reviewData.cafeId);
-    console.log("cafeId type:", typeof reviewData.cafeId);
-    console.log("Full reviewData:", reviewData);
-    
     if (!user) {
       toast({
-        title: "Authentication Required",
-        description: "Please sign in to submit a review",
+        title: "Authentication required",
+        description: "Please sign in to submit a review.",
         variant: "destructive"
       });
       return false;
     }
 
+    console.log('📝 [SUBMIT REVIEW] Starting review submission:', reviewData);
+    console.log('📝 [SUBMIT REVIEW] Rating value and type:', reviewData.rating, typeof reviewData.rating);
     setIsSubmitting(true);
 
     try {
-      // First, check if cafe exists by google_place_id, if not create it
-      const { data: existingCafe } = await supabase
-        .from('cafes')
-        .select('id')
-        .eq('google_place_id', reviewData.googlePlaceId || reviewData.cafeId)
-        .maybeSingle();
-
       let cafeId = reviewData.cafeId;
 
-      if (!existingCafe) {
-        console.log("🆕 Creating new cafe with data:");
-        console.log("id (UUID):", reviewData.cafeId);
-        console.log("name:", reviewData.cafeName);
-        console.log("google_place_id:", reviewData.googlePlaceId || reviewData.cafeId);
+      // Create cafe if it doesn't exist
+      if (!cafeId && reviewData.cafeDetails) {
+        console.log('🏪 [SUBMIT REVIEW] Creating new cafe:', reviewData.cafeDetails);
         
-        // Create cafe if it doesn't exist
-        const { error: cafeError } = await supabase
+        const { data: newCafe, error: cafeError } = await supabase
           .from('cafes')
           .insert({
-            id: reviewData.cafeId,
-            name: reviewData.cafeName,
-            google_place_id: reviewData.googlePlaceId || reviewData.cafeId, // Use separate Google Places ID
-            campus: reviewData.cafeName.includes('custom-') ? 'Unknown' : undefined // Handle custom cafes
-          });
+            name: reviewData.cafeDetails.name,
+            address: reviewData.cafeDetails.address,
+            campus: reviewData.cafeDetails.campus,
+            google_place_id: reviewData.cafeDetails.google_place_id,
+            lat: reviewData.cafeDetails.lat,
+            lng: reviewData.cafeDetails.lng
+          })
+          .select()
+          .single();
 
         if (cafeError) {
-          console.error("❌ Cafe creation error:", cafeError);
+          console.error('❌ [SUBMIT REVIEW] Error creating cafe:', cafeError);
           throw cafeError;
         }
-        console.log("✅ Cafe created successfully");
-      } else {
-        // Use existing cafe's ID
-        cafeId = existingCafe.id;
-        console.log("📍 Using existing cafe with ID:", cafeId);
+
+        cafeId = newCafe.id;
+        console.log('✅ [SUBMIT REVIEW] New cafe created with ID:', cafeId);
       }
 
-      // Submit the review
-      console.log("📝 Submitting review with data:");
-      console.log("user_id:", user.id);
-      console.log("cafe_id:", cafeId);
-      console.log("rating:", reviewData.rating);
-      console.log("blurb:", reviewData.notes);
+      if (!cafeId) {
+        throw new Error('No cafe ID available for review submission');
+      }
+
+      // Submit the review with decimal rating (NO Math.round()!)
+      const decimalRating = Number(reviewData.rating);
+      console.log('📝 [SUBMIT REVIEW] Submitting decimal rating:', decimalRating, 'formatted:', decimalRating.toFixed(1));
       
-      const { data: reviewResult, error: reviewError } = await supabase
+      const { data: review, error: reviewError } = await supabase
         .from('reviews')
         .insert({
-          user_id: user.id,
           cafe_id: cafeId,
-          rating: reviewData.rating,
+          user_id: user.id,
+          rating: decimalRating, // Store as decimal in NUMERIC(3,1) column
           blurb: reviewData.notes,
           photo_url: reviewData.photoUrl
         })
@@ -94,10 +90,11 @@ export const useReviews = () => {
         .single();
 
       if (reviewError) {
-        console.error("❌ Review submission error:", reviewError);
+        console.error('❌ [SUBMIT REVIEW] Error submitting review:', reviewError);
         throw reviewError;
       }
-      console.log("✅ Review submitted successfully:", reviewResult);
+
+      console.log('✅ [SUBMIT REVIEW] Review submitted successfully with decimal rating:', review);
 
       // Update user stats
       const { error: statsError } = await supabase.rpc('increment_user_stats', {
@@ -105,21 +102,21 @@ export const useReviews = () => {
       });
 
       if (statsError) {
-        console.warn('Failed to update user stats:', statsError);
-        // Don't fail the entire operation for stats update failure
+        console.error('⚠️ [SUBMIT REVIEW] Warning: Error updating user stats:', statsError);
+        // Don't throw here, review was successful
       }
 
       toast({
-        title: "Review Submitted!",
-        description: "Your review has been successfully posted.",
+        title: "Review submitted!",
+        description: `Your ${decimalRating.toFixed(1)}-star review has been posted successfully.`
       });
 
-      return reviewResult;
+      return review;
     } catch (error: any) {
-      console.error('Error submitting review:', error);
+      console.error('❌ [SUBMIT REVIEW] Error submitting review:', error);
       toast({
-        title: "Submission Failed",
-        description: error.message || "Failed to submit review. Please try again.",
+        title: "Failed to submit review",
+        description: error.message || "Please try again later.",
         variant: "destructive"
       });
       return false;

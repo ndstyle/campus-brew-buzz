@@ -204,7 +204,7 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
               <span className="text-sm text-muted-foreground">Rate from 1-10</span>
               <div className="flex items-center space-x-2">
                 <Star className="w-5 h-5 text-yellow-400" />
-                <span className="text-xl font-bold text-foreground">{rating[0]}</span>
+                <span className="text-xl font-bold text-foreground">{rating[0].toFixed(1)}</span>
               </div>
             </div>
             <Slider
