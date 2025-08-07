@@ -9,6 +9,8 @@ import { Camera, MapPin, Search, Star, ArrowLeft, Loader2 } from "lucide-react";
 import { useReviews, ReviewSubmission } from "@/hooks/useReviews";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import CafeSearchAutocomplete from "@/components/CafeSearchAutocomplete";
+import { type CafeResult } from "@/hooks/useCafeSearch";
 
 interface EditorProps {
   onBack?: () => void;
@@ -16,8 +18,9 @@ interface EditorProps {
 }
 
 const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
+  const [step, setStep] = useState<'search' | 'review'>('search');
+  const [selectedCafe, setSelectedCafe] = useState<CafeResult | null>(null);
   const [rating, setRating] = useState([7]);
-  const [selectedCafe, setSelectedCafe] = useState("");
   const [reviewText, setReviewText] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   
@@ -35,8 +38,8 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!selectedCafe.trim()) {
-      newErrors.cafe = "Please select or enter a cafe name";
+    if (!selectedCafe) {
+      newErrors.cafe = "Please select a cafe";
     }
 
     if (rating[0] < 1 || rating[0] > 10) {
@@ -65,13 +68,11 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
       return;
     }
 
-    // Find the selected cafe or create a new one
-    const selectedCafeData = suggestedCafes.find(cafe => cafe.name === selectedCafe);
-    const cafeId = selectedCafeData?.id || `custom-${Date.now()}`;
+    if (!selectedCafe) return;
 
     const reviewData: ReviewSubmission = {
-      cafeId,
-      cafeName: selectedCafe,
+      cafeId: selectedCafe.google_place_id || selectedCafe.id,
+      cafeName: selectedCafe.name,
       rating: Math.round(rating[0] * 10) / 10, // Round to 1 decimal place
       notes: reviewText.trim(),
     };
@@ -80,7 +81,8 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
     
     if (result) {
       // Reset form
-      setSelectedCafe("");
+      setStep('search');
+      setSelectedCafe(null);
       setRating([7]);
       setReviewText("");
       setErrors({});
@@ -98,17 +100,47 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
     console.log("Save as draft functionality to be implemented");
   };
 
+  const handleCafeSelected = (cafe: CafeResult) => {
+    setSelectedCafe(cafe);
+    setStep('review');
+  };
+
+  const handleAddNewCafe = (cafeName: string) => {
+    // Create a temporary cafe object for new cafes
+    const newCafe: CafeResult = {
+      id: `custom-${Date.now()}`,
+      name: cafeName,
+    };
+    setSelectedCafe(newCafe);
+    setStep('review');
+  };
+
+  const handleBackToSearch = () => {
+    setStep('search');
+    setErrors({});
+  };
+
+  // Show cafe search first
+  if (step === 'search') {
+    return (
+      <CafeSearchAutocomplete
+        onCafeSelected={handleCafeSelected}
+        onAddNewCafe={handleAddNewCafe}
+        onBack={onBack}
+      />
+    );
+  }
+
+  // Show review form after cafe is selected
   return (
     <div className="mobile-container bg-background min-h-screen">
       <div className="mobile-safe-area py-6 px-4">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-4">
-            {onBack && (
-              <Button variant="ghost" size="icon" onClick={onBack} disabled={isSubmitting}>
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            )}
+            <Button variant="ghost" size="icon" onClick={handleBackToSearch} disabled={isSubmitting}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
             <div>
               <h1 className="text-3xl font-bold text-foreground">Write Review</h1>
               <p className="text-muted-foreground">Share your coffee experience</p>
@@ -123,47 +155,17 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
           </Alert>
         )}
 
-        {/* Cafe Selection */}
+        {/* Selected Cafe Display */}
         <Card className="p-4 mb-6">
-          <h2 className="text-lg font-semibold text-foreground mb-3">Select Cafe</h2>
-          <div className="relative mb-4">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-            <Input 
-              placeholder="Search for a cafe..."
-              value={selectedCafe}
-              onChange={(e) => {
-                setSelectedCafe(e.target.value);
-                if (errors.cafe) {
-                  setErrors(prev => ({ ...prev, cafe: "" }));
-                }
-              }}
-              className={`pl-10 ${errors.cafe ? 'border-destructive' : ''}`}
-              disabled={isSubmitting}
-            />
-            {errors.cafe && (
-              <p className="text-sm text-destructive mt-1">{errors.cafe}</p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Nearby suggestions:</p>
-            {suggestedCafes.map((cafe, index) => (
-              <div 
-                key={index}
-                onClick={() => !isSubmitting && setSelectedCafe(cafe.name)}
-                className={`flex items-center justify-between p-3 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ${
-                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                } ${selectedCafe === cafe.name ? 'bg-muted border-primary' : ''}`}
-              >
-                <div>
-                  <h3 className="font-medium text-foreground">{cafe.name}</h3>
-                  <p className="text-sm text-muted-foreground flex items-center">
-                    <MapPin className="w-3 h-3 mr-1" />
-                    {cafe.location} · {cafe.distance}
-                  </p>
-                </div>
-              </div>
-            ))}
+          <h2 className="text-lg font-semibold text-foreground mb-3">Selected Cafe</h2>
+          <div className="flex items-center space-x-3">
+            <MapPin className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <h3 className="font-medium text-foreground">{selectedCafe?.name}</h3>
+              {selectedCafe?.address && (
+                <p className="text-sm text-muted-foreground">{selectedCafe.address}</p>
+              )}
+            </div>
           </div>
         </Card>
 
