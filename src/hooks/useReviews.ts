@@ -38,12 +38,14 @@ export const useReviews = () => {
     setIsSubmitting(true);
 
     try {
-      // First, check if cafe exists, if not create it
+      // First, check if cafe exists by google_place_id, if not create it
       const { data: existingCafe } = await supabase
         .from('cafes')
         .select('id')
-        .eq('id', reviewData.cafeId)
+        .eq('google_place_id', reviewData.googlePlaceId || reviewData.cafeId)
         .maybeSingle();
+
+      let cafeId = reviewData.cafeId;
 
       if (!existingCafe) {
         console.log("🆕 Creating new cafe with data:");
@@ -66,12 +68,16 @@ export const useReviews = () => {
           throw cafeError;
         }
         console.log("✅ Cafe created successfully");
+      } else {
+        // Use existing cafe's ID
+        cafeId = existingCafe.id;
+        console.log("📍 Using existing cafe with ID:", cafeId);
       }
 
       // Submit the review
       console.log("📝 Submitting review with data:");
       console.log("user_id:", user.id);
-      console.log("cafe_id:", reviewData.cafeId);
+      console.log("cafe_id:", cafeId);
       console.log("rating:", reviewData.rating);
       console.log("blurb:", reviewData.notes);
       
@@ -79,7 +85,7 @@ export const useReviews = () => {
         .from('reviews')
         .insert({
           user_id: user.id,
-          cafe_id: reviewData.cafeId,
+          cafe_id: cafeId,
           rating: reviewData.rating,
           blurb: reviewData.notes,
           photo_url: reviewData.photoUrl
