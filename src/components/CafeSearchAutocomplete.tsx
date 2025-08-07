@@ -30,17 +30,22 @@ const CafeSearchAutocomplete = ({
 
   // Debounced search
   useEffect(() => {
+    console.log("🔍 [AUTOCOMPLETE] Search term changed to:", searchTerm);
+    
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
     if (searchTerm.length >= 2) {
+      console.log("🔍 [AUTOCOMPLETE] Setting up debounced search...");
       searchTimeoutRef.current = setTimeout(() => {
+        console.log("🔍 [AUTOCOMPLETE] Executing debounced search for:", searchTerm);
         searchCafes(searchTerm, campus);
         setShowDropdown(true);
         setSelectedIndex(-1);
       }, 300);
     } else {
+      console.log("🔍 [AUTOCOMPLETE] Search term too short, clearing results");
       clearResults();
       setShowDropdown(false);
     }
@@ -153,7 +158,12 @@ const CafeSearchAutocomplete = ({
         {showDropdown && (
           <div ref={dropdownRef} className="relative z-50">
             <Card className="bg-popover border border-border shadow-lg">
-              {results.length > 0 ? (
+              {isLoading ? (
+                <div className="p-4 text-center">
+                  <Loader2 className="w-4 h-4 animate-spin mx-auto mb-2" />
+                  <p className="text-muted-foreground text-sm">Searching cafes...</p>
+                </div>
+              ) : results.length > 0 ? (
                 <div className="py-2">
                   {results.map((cafe, index) => (
                     <div
@@ -179,9 +189,14 @@ const CafeSearchAutocomplete = ({
                   ))}
                 </div>
               ) : (
-                !isLoading && searchTerm.length >= 2 && (
+                searchTerm.length >= 2 && (
                   <div className="p-4 text-center">
-                    <p className="text-muted-foreground text-sm mb-2">No cafes found</p>
+                    <p className="text-muted-foreground text-sm mb-2">
+                      No cafes found for "{searchTerm}"
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Database appears empty. Try adding a new cafe below.
+                    </p>
                   </div>
                 )
               )}
@@ -213,6 +228,9 @@ const CafeSearchAutocomplete = ({
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
             Type at least 2 characters to start searching
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            🐛 Debug: Check console for search API calls and responses
           </p>
         </div>
       </div>

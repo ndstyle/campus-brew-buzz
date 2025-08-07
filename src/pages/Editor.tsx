@@ -101,16 +101,19 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
   };
 
   const handleCafeSelected = (cafe: CafeResult) => {
+    console.log("✅ [EDITOR] Cafe selected:", cafe);
     setSelectedCafe(cafe);
     setStep('review');
   };
 
   const handleAddNewCafe = (cafeName: string) => {
+    console.log("➕ [EDITOR] Adding new cafe:", cafeName);
     // Create a temporary cafe object for new cafes
     const newCafe: CafeResult = {
       id: `custom-${Date.now()}`,
       name: cafeName,
     };
+    console.log("✅ [EDITOR] New cafe created:", newCafe);
     setSelectedCafe(newCafe);
     setStep('review');
   };

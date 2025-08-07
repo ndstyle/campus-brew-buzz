@@ -16,7 +16,10 @@ export const useCafeSearch = () => {
   const { toast } = useToast();
 
   const searchCafes = useCallback(async (searchTerm: string, campus?: string) => {
+    console.log("🔍 [CAFE SEARCH] Search triggered for:", searchTerm, "campus:", campus);
+    
     if (!searchTerm.trim()) {
+      console.log("🔍 [CAFE SEARCH] Empty search term, clearing results");
       setResults([]);
       return;
     }
@@ -35,15 +38,27 @@ export const useCafeSearch = () => {
         query = query.eq('campus', campus);
       }
 
+      console.log("🔍 [CAFE SEARCH] Executing Supabase query...");
       const { data, error } = await query.order('name');
 
       if (error) {
+        console.error("🔍 [CAFE SEARCH] Supabase query error:", error);
         throw error;
+      }
+
+      console.log("🔍 [CAFE SEARCH] Supabase results:", data);
+      console.log("🔍 [CAFE SEARCH] Results count:", data?.length || 0);
+
+      // If no results from database, try to search Google Places
+      if (!data || data.length === 0) {
+        console.log("🔍 [CAFE SEARCH] No database results, searching Google Places...");
+        // For now, show empty but log that we should integrate with Google Places
+        console.warn("🔍 [CAFE SEARCH] TODO: Integrate Google Places search for:", searchTerm);
       }
 
       setResults(data || []);
     } catch (error: any) {
-      console.error('Error searching cafes:', error);
+      console.error('🔍 [CAFE SEARCH] Search error:', error);
       toast({
         title: "Search Error",
         description: "Failed to search cafes. Please try again.",
