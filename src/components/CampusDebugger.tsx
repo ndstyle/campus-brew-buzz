@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserCampus } from "@/hooks/useUserCampus";
+import { useUniversities } from "@/hooks/useUniversities";
 import { supabase } from "@/integrations/supabase/client";
-import { getSchoolCoordinates } from "@/utils/schoolCoordinates";
 
 const CampusDebugger = () => {
   const { user } = useAuth();
@@ -53,28 +53,27 @@ const CampusDebugger = () => {
       console.log("🔬 [CAMPUS DEBUGGER] Hook loading:", loading);
       console.log("🔬 [CAMPUS DEBUGGER] Hook campus type:", typeof campus);
       
-      // Step 5: Check coordinate mapping
+      // Step 5: Test coordinate mapping using new universities database
       if (campus) {
         console.log("🔬 [CAMPUS DEBUGGER] Step 5 - Coordinate Mapping:");
-        const coordinates = getSchoolCoordinates(campus);
         console.log("🔬 [CAMPUS DEBUGGER] Campus for lookup:", campus);
+        const coordinates = getUniversityCoordinates(campus);
         console.log("🔬 [CAMPUS DEBUGGER] Coordinates result:", coordinates);
         console.log("🔬 [CAMPUS DEBUGGER] Expected for UIUC: { lat: 40.1020, lng: -88.2272, zoom: 15 }");
         console.log("🔬 [CAMPUS DEBUGGER] Expected for UCLA: { lat: 34.0689, lng: -118.4452, zoom: 15 }");
         
-        if (campus.toLowerCase().includes('illinois') || campus.toLowerCase().includes('uiuc')) {
-          if (coordinates.lat !== 40.1020 || coordinates.lng !== -88.2272) {
-            console.error("🚨 [CAMPUS DEBUGGER] COORDINATE MISMATCH: UIUC should map to Illinois coordinates!");
-          } else {
+        // Verify specific coordinates
+        if (campus && campus.includes('UIUC')) {
+          if (Math.abs(coordinates.lat - 40.1020) < 0.001 && Math.abs(coordinates.lng - (-88.2272)) < 0.001) {
             console.log("✅ [CAMPUS DEBUGGER] UIUC coordinates correct");
-          }
-        }
-        
-        if (campus.toLowerCase().includes('ucla') || campus.toLowerCase().includes('los angeles')) {
-          if (coordinates.lat !== 34.0689 || coordinates.lng !== -118.4452) {
-            console.error("🚨 [CAMPUS DEBUGGER] COORDINATE MISMATCH: UCLA should map to California coordinates!");
           } else {
+            console.log("❌ [CAMPUS DEBUGGER] UIUC coordinates incorrect");
+          }
+        } else if (campus && campus.includes('UCLA')) {
+          if (Math.abs(coordinates.lat - 34.0689) < 0.001 && Math.abs(coordinates.lng - (-118.4452)) < 0.001) {
             console.log("✅ [CAMPUS DEBUGGER] UCLA coordinates correct");
+          } else {
+            console.log("❌ [CAMPUS DEBUGGER] UCLA coordinates incorrect");
           }
         }
       }
@@ -85,7 +84,7 @@ const CampusDebugger = () => {
     if (user && !loading) {
       runDiagnostics();
     }
-  }, [user, campus, loading]);
+  }, [user, campus, loading, getUniversityCoordinates]);
 
   // This component is invisible, just for debugging
   return null;
