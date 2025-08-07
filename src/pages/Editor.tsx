@@ -72,12 +72,21 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
 
     if (!selectedCafe) return;
 
+    console.log("🔍 Selected cafe object:", selectedCafe);
+    console.log("🔍 Cafe UUID (selectedCafe.id):", selectedCafe.id);
+    console.log("🔍 Cafe Google Places ID (selectedCafe.google_place_id):", selectedCafe.google_place_id);
+    console.log("🔍 ID type:", typeof selectedCafe.id);
+    console.log("🔍 Google Places ID type:", typeof selectedCafe.google_place_id);
+
     const reviewData: ReviewSubmission = {
-      cafeId: selectedCafe.google_place_id || selectedCafe.id,
+      cafeId: selectedCafe.id, // Use the UUID for database operations
       cafeName: selectedCafe.name,
       rating: Math.round(rating[0] * 10) / 10, // Round to 1 decimal place
       notes: reviewText.trim(),
+      googlePlaceId: selectedCafe.google_place_id, // Pass Google Places ID separately
     };
+
+    console.log("📤 Review data being submitted:", reviewData);
 
     const result = await submitReview(reviewData);
     

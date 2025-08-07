@@ -4,12 +4,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface ReviewSubmission {
-  cafeId: string;
+  cafeId: string; // UUID for database
   cafeName: string;
   rating: number;
   notes: string;
   photoUrl?: string;
   categories?: string[];
+  googlePlaceId?: string; // Google Places ID for Maps integration
 }
 
 export const useReviews = () => {
@@ -18,6 +19,13 @@ export const useReviews = () => {
   const { user } = useAuth();
 
   const submitReview = useCallback(async (reviewData: ReviewSubmission) => {
+    console.log("=== REVIEW SUBMISSION PAYLOAD ===");
+    console.log("user_id:", user?.id);
+    console.log("user_id type:", typeof user?.id);
+    console.log("cafeId being sent:", reviewData.cafeId);
+    console.log("cafeId type:", typeof reviewData.cafeId);
+    console.log("Full reviewData:", reviewData);
+    
     if (!user) {
       toast({
         title: "Authentication Required",
@@ -38,21 +46,35 @@ export const useReviews = () => {
         .maybeSingle();
 
       if (!existingCafe) {
+        console.log("🆕 Creating new cafe with data:");
+        console.log("id (UUID):", reviewData.cafeId);
+        console.log("name:", reviewData.cafeName);
+        console.log("google_place_id:", reviewData.googlePlaceId || reviewData.cafeId);
+        
         // Create cafe if it doesn't exist
         const { error: cafeError } = await supabase
           .from('cafes')
           .insert({
             id: reviewData.cafeId,
             name: reviewData.cafeName,
-            google_place_id: reviewData.cafeId
+            google_place_id: reviewData.googlePlaceId || reviewData.cafeId, // Use separate Google Places ID
+            campus: reviewData.cafeName.includes('custom-') ? 'Unknown' : undefined // Handle custom cafes
           });
 
         if (cafeError) {
+          console.error("❌ Cafe creation error:", cafeError);
           throw cafeError;
         }
+        console.log("✅ Cafe created successfully");
       }
 
       // Submit the review
+      console.log("📝 Submitting review with data:");
+      console.log("user_id:", user.id);
+      console.log("cafe_id:", reviewData.cafeId);
+      console.log("rating:", reviewData.rating);
+      console.log("blurb:", reviewData.notes);
+      
       const { data: reviewResult, error: reviewError } = await supabase
         .from('reviews')
         .insert({
@@ -66,8 +88,10 @@ export const useReviews = () => {
         .single();
 
       if (reviewError) {
+        console.error("❌ Review submission error:", reviewError);
         throw reviewError;
       }
+      console.log("✅ Review submitted successfully:", reviewResult);
 
       // Update user stats
       const { error: statsError } = await supabase.rpc('increment_user_stats', {
