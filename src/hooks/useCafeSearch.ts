@@ -7,6 +7,8 @@ import { v4 as uuidv4 } from 'uuid';
 const CAMPUS_COORDINATES: { [key: string]: { lat: number; lng: number } } = {
   'UCLA': { lat: 34.0689, lng: -118.4452 },
   'University of California, Los Angeles': { lat: 34.0689, lng: -118.4452 },
+  'UC Berkeley': { lat: 37.8719, lng: -122.2585 },
+  'University of California, Berkeley': { lat: 37.8719, lng: -122.2585 },
   'USC': { lat: 34.0224, lng: -118.2851 },
   'Stanford': { lat: 37.4419, lng: -122.1430 },
   // Add more campuses as needed
@@ -105,8 +107,10 @@ export const useCafeSearch = () => {
       }
 
       // Get campus coordinates
-      const coordinates = CAMPUS_COORDINATES[campus] || CAMPUS_COORDINATES['UCLA']; // Default to UCLA
+      const coordinates = CAMPUS_COORDINATES[campus] || CAMPUS_COORDINATES['University of California, Los Angeles']; // Default to UCLA
+      console.log("🔍 [GOOGLE PLACES] Campus:", campus);
       console.log("🔍 [GOOGLE PLACES] Using coordinates for", campus, ":", coordinates);
+      console.log("🔍 [GOOGLE PLACES] Available campuses:", Object.keys(CAMPUS_COORDINATES));
 
       // Call the places-search edge function
       const { data: placesData, error: placesError } = await supabase.functions.invoke('places-search', {

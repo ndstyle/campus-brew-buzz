@@ -17,6 +17,8 @@ export const useUserCampus = () => {
       }
 
       console.log("🏫 [USER CAMPUS] Getting campus for user:", user.id);
+      console.log("🏫 [USER CAMPUS] Auth metadata:", user.user_metadata);
+      console.log("🏫 [USER CAMPUS] Auth metadata college:", user.user_metadata?.college);
 
       // Try to get campus from auth metadata first
       const authMetadataCollege = user.user_metadata?.college;
@@ -28,12 +30,15 @@ export const useUserCampus = () => {
       }
 
       // Fallback: Try to get from users table
+      console.log("🏫 [USER CAMPUS] No campus in auth metadata, checking users table...");
       try {
         const { data: userData, error } = await supabase
           .from('users')
           .select('college')
           .eq('id', user.id)
           .single();
+
+        console.log("🏫 [USER CAMPUS] Users table query result:", { userData, error });
 
         if (error) {
           console.warn("🏫 [USER CAMPUS] Error fetching user data:", error);
@@ -44,14 +49,15 @@ export const useUserCampus = () => {
           console.log("🏫 [USER CAMPUS] Found campus in users table:", userData.college);
           setCampus(userData.college);
         } else {
-          console.log("🏫 [USER CAMPUS] No campus found, using default");
-          // Default campus for testing
-          setCampus('UCLA');
+          console.log("🏫 [USER CAMPUS] No campus found anywhere, using default UCLA");
+          // Default campus for testing - make sure it's UCLA
+          setCampus('University of California, Los Angeles');
         }
       } catch (error) {
         console.error("🏫 [USER CAMPUS] Unexpected error:", error);
         // Use default campus as fallback
-        setCampus('UCLA');
+        console.log("🏫 [USER CAMPUS] Using fallback campus: University of California, Los Angeles");
+        setCampus('University of California, Los Angeles');
       }
 
       setLoading(false);
