@@ -24,6 +24,17 @@ export const useCafeSearch = () => {
       return;
     }
 
+    if (!campus) {
+      console.error("🔍 [CAFE SEARCH] No campus provided - this is required for Supabase query");
+      toast({
+        title: "Campus Required",
+        description: "Campus information is needed to search cafes.",
+        variant: "destructive"
+      });
+      setResults([]);
+      return;
+    }
+
     setIsLoading(true);
     
     try {

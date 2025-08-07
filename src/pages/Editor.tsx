@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import CafeSearchAutocomplete from "@/components/CafeSearchAutocomplete";
 import { type CafeResult } from "@/hooks/useCafeSearch";
+import { useUserCampus } from "@/hooks/useUserCampus";
 
 interface EditorProps {
   onBack?: () => void;
@@ -26,6 +27,7 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
   
   const { submitReview, isSubmitting } = useReviews();
   const { user } = useAuth();
+  const { campus, loading: campusLoading } = useUserCampus();
 
   const suggestedCafes = [
     { id: "blue-bottle-village", name: "Blue Bottle Coffee", location: "Greenwich Village", distance: "0.2 mi" },
@@ -125,11 +127,24 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
 
   // Show cafe search first
   if (step === 'search') {
+    // Show loading if we're still getting campus info
+    if (campusLoading) {
+      return (
+        <div className="mobile-container bg-background min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <CafeSearchAutocomplete
         onCafeSelected={handleCafeSelected}
         onAddNewCafe={handleAddNewCafe}
         onBack={onBack}
+        campus={campus || undefined}
       />
     );
   }
