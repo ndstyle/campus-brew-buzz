@@ -412,6 +412,14 @@ export type Database = {
         Args: { event_type: string; user_id?: string; details?: Json }
         Returns: undefined
       }
+      normalize_university_name: {
+        Args: { input_name: string }
+        Returns: string
+      }
+      sync_user_college: {
+        Args: { provided_name: string }
+        Returns: string
+      }
       validate_email: {
         Args: { email: string }
         Returns: boolean
