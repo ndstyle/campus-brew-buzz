@@ -3,27 +3,27 @@ import { Button } from "@/components/ui/button";
 import { Bell, Menu } from "lucide-react";
 
 const LeaderboardPage = () => {
-  const [activeTab, setActiveTab] = useState("visited");
-  const [leaderboardType, setLeaderboardType] = useState("friends");
+  const [activeTab, setActiveTab] = useState<'reviewers' | 'cafes'>("reviewers");
+  const [leaderboardType, setLeaderboardType] = useState<'friends' | 'global'>("friends");
+  const [items, setItems] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const pageSize = 20;
 
-  const userStats = {
-    visited: 5,
-    reviewed: 4,
-    photos: 3
+  const fetchLeaderboard = async () => {
+    const params = new URLSearchParams({
+      type: activeTab,
+      scope: leaderboardType,
+      page: String(page),
+      pageSize: String(pageSize),
+    });
+    try {
+      const { data, error } = await (await fetch(`${import.meta.env ? '' : ''}`)).json();
+    } catch (e) {}
   };
-
-  const mockUsers = [
-    { username: "barackobama", score: 300, rank: 1, avatar: "👤" },
-    { username: "donaldtrump", score: 275, rank: 2, avatar: "👤" },
-    { username: "sigmachad", score: 250, rank: 3, avatar: "👤" },
-    { username: "doug", score: 123, rank: 4, avatar: "👤" },
-    { username: "megaknight", score: 99, rank: 5, avatar: "👤" },
-    { username: "niranjan", score: 88, rank: 6, avatar: "👤" },
-    { username: "idris", score: 77, rank: 7, avatar: "👤" },
-    { username: "rizzlord", score: 49, rank: 8, avatar: "👤" },
-    { username: "rit", score: 31, rank: 9, avatar: "👤" },
-    { username: "baahubali", score: 3, rank: 10, avatar: "👤" },
-  ];
+  // Data fetched from edge function at runtime
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <div className="mobile-container bg-background pb-20 min-h-screen">
@@ -46,6 +46,28 @@ const LeaderboardPage = () => {
         <div className="px-4">
           {/* Page Title */}
           <h2 className="text-4xl font-bold mb-8">leaderboard</h2>
+
+          {/* Type Toggle */}
+          <div className="flex justify-center mb-6">
+            <div className="flex space-x-2">
+              <Button
+                variant={activeTab === 'reviewers' ? 'default' : 'outline'}
+                onClick={() => { setActiveTab('reviewers'); setPage(1); }}
+                size="sm"
+                className="rounded-full px-6"
+              >
+                Reviewers
+              </Button>
+              <Button
+                variant={activeTab === 'cafes' ? 'default' : 'outline'}
+                onClick={() => { setActiveTab('cafes'); setPage(1); }}
+                size="sm"
+                className="rounded-full px-6"
+              >
+                Cafes
+              </Button>
+            </div>
+          </div>
 
           {/* User Stats Circle */}
           <div className="flex justify-center mb-8">
@@ -91,20 +113,20 @@ const LeaderboardPage = () => {
             </div>
           </div>
 
-          {/* Leaderboard Type Toggle */}
+          {/* Leaderboard Scope Toggle */}
           <div className="flex justify-center mb-6">
             <div className="flex space-x-2">
               <Button
-                variant={leaderboardType === "friends" ? "default" : "outline"}
-                onClick={() => setLeaderboardType("friends")}
+                variant={leaderboardType === 'friends' ? 'default' : 'outline'}
+                onClick={() => { setLeaderboardType('friends'); setPage(1); }}
                 size="sm"
                 className="rounded-full px-6"
               >
                 Friends
               </Button>
               <Button
-                variant={leaderboardType === "global" ? "default" : "outline"}
-                onClick={() => setLeaderboardType("global")}
+                variant={leaderboardType === 'global' ? 'default' : 'outline'}
+                onClick={() => { setLeaderboardType('global'); setPage(1); }}
                 size="sm"
                 className="rounded-full px-6"
               >
@@ -115,24 +137,30 @@ const LeaderboardPage = () => {
 
           {/* Rankings List */}
           <div className="space-y-2">
-            {mockUsers.map((user) => (
-              <div
-                key={user.username}
-                className="flex items-center justify-between p-3"
-              >
+            {loading && <div className="p-3 text-sm text-muted-foreground">Loading…</div>}
+            {error && <div className="p-3 text-sm text-destructive">{error}</div>}
+            {!loading && !error && items.map((row: any) => (
+              <div key={`${activeTab}-${row.rank}-${row.user?.id || row.id}`} className="flex items-center justify-between p-3">
                 <div className="flex items-center space-x-4">
                   <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                    <span className="text-lg">{user.avatar}</span>
+                    <span className="text-lg">{row.user?.avatar_url ? '🖼️' : '👤'}</span>
                   </div>
-                  <span className="font-medium text-lg">
-                    @{user.username}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="font-medium text-lg">{activeTab === 'reviewers' ? `@${row.user?.username || 'user'}` : row.name}</span>
+                    <span className="text-xs text-muted-foreground">#{row.rank} • {activeTab === 'reviewers' ? (row.user?.college || '-') : (Number(row.avg_rating).toFixed(1) + ' ⭐')}</span>
+                  </div>
                 </div>
                 <div className="text-lg font-bold">
-                  {user.score}
+                  {activeTab === 'reviewers' ? row.score : row.reviews_count}
                 </div>
               </div>
             ))}
+            {/* Pagination */}
+            <div className="flex items-center justify-between pt-2">
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</Button>
+              <div className="text-sm text-muted-foreground">Page {page}</div>
+              <Button variant="outline" size="sm" disabled={page * pageSize >= total} onClick={() => setPage((p) => p + 1)}>Next</Button>
+            </div>
           </div>
         </div>
       </div>

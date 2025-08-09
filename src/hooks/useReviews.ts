@@ -125,9 +125,10 @@ export const useReviews = () => {
     }
   }, [user, toast]);
 
-  const fetchReviews = useCallback(async () => {
+  const fetchReviews = useCallback(async (scope: 'all' | 'friends' = 'all') => {
     try {
-      const { data, error } = await supabase
+      console.log('[FEED] Fetching reviews with scope:', scope);
+      let base = supabase
         .from('reviews')
         .select(`
           *,
@@ -137,6 +138,7 @@ export const useReviews = () => {
             campus
           ),
           users (
+            id,
             username,
             first_name,
             last_name,
@@ -145,21 +147,30 @@ export const useReviews = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        throw error;
+      if (scope === 'friends' && user) {
+        const { data: follows, error: fErr } = await supabase
+          .from('follows')
+          .select('followee_id')
+          .eq('follower_id', user.id);
+        if (fErr) throw fErr;
+        const ids = (follows || []).map((f: any) => f.followee_id);
+        if (ids.length === 0) return [];
+        base = base.in('user_id', ids);
       }
 
+      const { data, error } = await base;
+      if (error) throw error;
       return data || [];
     } catch (error: any) {
-      console.error('Error fetching reviews:', error);
+      console.error('[FEED] Error fetching reviews:', error);
       toast({
-        title: "Error Loading Reviews",
-        description: "Failed to load reviews. Please refresh the page.",
-        variant: "destructive"
+        title: 'Error Loading Reviews',
+        description: error.message || 'Failed to load reviews. Please refresh the page.',
+        variant: 'destructive',
       });
       return [];
     }
-  }, [toast]);
+  }, [toast, user]);
 
   return {
     submitReview,

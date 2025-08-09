@@ -32,14 +32,15 @@ const FeedPage = ({ searchMode = false, onReviewClick, onAddReview, refreshTrigg
 
   const loadReviews = async () => {
     setLoading(true);
-    const data = await fetchReviews();
+    const scope = activeFilter === 'friends' ? 'friends' : 'all';
+    const data = await fetchReviews(scope as any);
     setReviews(data);
     setLoading(false);
   };
 
   useEffect(() => {
     loadReviews();
-  }, []);
+  }, [activeFilter]);
 
   // Reload reviews when refreshTrigger changes
   useEffect(() => {
@@ -263,7 +264,7 @@ const FeedPage = ({ searchMode = false, onReviewClick, onAddReview, refreshTrigg
                     {/* Rating Circle */}
                     <div className="w-12 h-12 bg-success rounded-full flex items-center justify-center">
                       <span className="text-success-foreground font-bold text-lg">
-                        {review.rating}
+                        {Number(review.rating).toFixed(1)}
                       </span>
                     </div>
                   </div>

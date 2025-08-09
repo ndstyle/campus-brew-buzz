@@ -54,3 +54,15 @@ enabled = true
 
 [functions.google-maps-config]
 verify_jwt = false
+
+[functions.leaderboard]
+verify_jwt = true
+
+[functions.profile]
+verify_jwt = true
+
+[functions.follow]
+verify_jwt = true
+
+[functions.reviews]
+verify_jwt = true
