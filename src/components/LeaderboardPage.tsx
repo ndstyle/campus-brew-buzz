@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Bell, Menu } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useUserCampus } from "@/hooks/useUserCampus";
 
 const LeaderboardPage = () => {
   const [activeTab, setActiveTab] = useState<'reviewers' | 'cafes'>("reviewers");
@@ -11,19 +13,46 @@ const LeaderboardPage = () => {
   const pageSize = 20;
 
   const fetchLeaderboard = async () => {
+    setLoading(true);
+    setError(null);
     const params = new URLSearchParams({
       type: activeTab,
       scope: leaderboardType,
       page: String(page),
       pageSize: String(pageSize),
     });
+    if (campus) params.set("campus", campus);
     try {
-      const { data, error } = await (await fetch(`${import.meta.env ? '' : ''}`)).json();
-    } catch (e) {}
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`https://ewzybklijfcablgmkbyw.functions.supabase.co/leaderboard?${params.toString()}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+        }
+      );
+      const body = await res.json();
+      if (!res.ok) {
+        throw new Error(body?.error || res.statusText);
+      }
+      setItems(body.data || []);
+      setTotal(body.total || 0);
+    } catch (e: any) {
+      setError(e.message || "Failed to load leaderboard");
+    } finally {
+      setLoading(false);
+    }
   };
+  const { campus } = useUserCampus();
+
   // Data fetched from edge function at runtime
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [activeTab, leaderboardType, page, campus]);
 
   return (
     <div className="mobile-container bg-background pb-20 min-h-screen">
@@ -91,25 +120,6 @@ const LeaderboardPage = () => {
                   <div className="text-lg font-bold">3</div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Tab Selection */}
-          <div className="flex justify-center mb-6">
-            <div className="flex bg-background border border-border rounded-full p-1">
-              {["visited", "reviewed", "photos"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-2 rounded-full text-sm font-medium capitalize transition-colors ${
-                    activeTab === tab
-                      ? "bg-foreground text-background"
-                      : "text-foreground hover:text-primary"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
             </div>
           </div>
 
