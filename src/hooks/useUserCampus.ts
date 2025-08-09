@@ -25,7 +25,20 @@ export const useUserCampus = () => {
 
         if (authCampus) {
           console.log('🏫 [USER CAMPUS] Found campus in auth metadata:', authCampus);
-          setCampus(authCampus);
+          // Normalize and persist to users table immediately
+          try {
+            const { data: normalized, error: syncErr } = await supabase.rpc('sync_user_college', { provided_name: authCampus });
+            if (syncErr) {
+              console.error('❌ [CAMPUS] sync_user_college failed:', syncErr);
+              setCampus(authCampus);
+            } else {
+              console.log('✅ [CAMPUS] Normalized and saved college:', normalized);
+              setCampus((normalized as string) || authCampus);
+            }
+          } catch (e) {
+            console.error('❌ [CAMPUS] RPC error:', e);
+            setCampus(authCampus);
+          }
           setLoading(false);
           return;
         }
