@@ -76,34 +76,63 @@ export const useReviews = () => {
 
       let cafeId = reviewData.cafeId;
 
-      // Create cafe if it doesn't exist
+      // Handle cafe creation/retrieval with UPSERT to avoid constraint violations
       if (!cafeId && reviewData.cafeDetails) {
-        console.log('🏪 [SUBMIT REVIEW] Creating new cafe:', reviewData.cafeDetails);
+        console.log('🏪 [SUBMIT REVIEW] UPSERTING cafe (create or get existing):', reviewData.cafeDetails);
         
-        const { data: newCafe, error: cafeError } = await supabase
+        // First try to find existing cafe by google_place_id
+        const { data: existingCafe, error: findError } = await supabase
           .from('cafes')
-          .insert({
-            name: reviewData.cafeDetails.name,
-            address: reviewData.cafeDetails.address,
-            campus: reviewData.cafeDetails.campus,
-            google_place_id: reviewData.cafeDetails.google_place_id,
-            lat: reviewData.cafeDetails.lat,
-            lng: reviewData.cafeDetails.lng
-          })
-          .select()
+          .select('id')
+          .eq('google_place_id', reviewData.cafeDetails.google_place_id)
           .single();
 
-        if (cafeError) {
-          console.error('❌ [SUBMIT REVIEW] Error creating cafe:', cafeError);
-          throw cafeError;
+        if (findError && findError.code !== 'PGRST116') { // PGRST116 = no rows found
+          console.error('❌ [SUBMIT REVIEW] Error finding existing cafe:', findError);
+          throw findError;
         }
 
-        cafeId = newCafe.id;
-        console.log('✅ [SUBMIT REVIEW] New cafe created with ID:', cafeId);
+        if (existingCafe) {
+          // Cafe already exists, use existing ID
+          cafeId = existingCafe.id;
+          console.log('✅ [SUBMIT REVIEW] Found existing cafe with ID:', cafeId);
+        } else {
+          // Cafe doesn't exist, create new one with INSERT ... ON CONFLICT
+          console.log('🏪 [SUBMIT REVIEW] Creating new cafe with UPSERT...');
+          
+          const { data: upsertedCafe, error: cafeError } = await supabase
+            .from('cafes')
+            .upsert({
+              name: reviewData.cafeDetails.name,
+              address: reviewData.cafeDetails.address,
+              campus: reviewData.cafeDetails.campus,
+              google_place_id: reviewData.cafeDetails.google_place_id,
+              lat: reviewData.cafeDetails.lat,
+              lng: reviewData.cafeDetails.lng
+            }, {
+              onConflict: 'google_place_id',
+              ignoreDuplicates: false
+            })
+            .select('id')
+            .single();
+
+          if (cafeError) {
+            console.error('❌ [SUBMIT REVIEW] Error upserting cafe:', cafeError);
+            throw cafeError;
+          }
+
+          cafeId = upsertedCafe.id;
+          console.log('✅ [SUBMIT REVIEW] Cafe upserted with ID:', cafeId);
+        }
       }
 
       if (!cafeId) {
-        throw new Error('No cafe ID available for review submission');
+        console.error('❌ [SUBMIT REVIEW] Missing cafe data:', { 
+          cafeId: reviewData.cafeId, 
+          hasCafeDetails: !!reviewData.cafeDetails,
+          cafeDetails: reviewData.cafeDetails 
+        });
+        throw new Error('No cafe ID available for review submission - missing cafe data');
       }
 
       // Submit the review with upsert (replaces existing review for same user/cafe)

@@ -44,8 +44,8 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
       const transformedCafe = {
         ...prefilledCafe,
         // Ensure we have the right field names with proper null/undefined handling
-        google_place_id: prefilledCafe.google_place_id || prefilledCafe.place_id || null,
-        address: prefilledCafe.address || prefilledCafe.vicinity || '',
+        google_place_id: prefilledCafe.google_place_id || (prefilledCafe as any).place_id || null,
+        address: prefilledCafe.address || (prefilledCafe as any).vicinity || '',
         campus: prefilledCafe.campus || campus || 'Unknown Campus' // Safe fallback
       };
       
@@ -112,26 +112,34 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
       cafeName: selectedCafe.name,
       rating: rating[0], // Keep exact decimal value (1-10, step 0.1)
       notes: reviewText.trim(),
-      photoUrl: uploadedPhotoUrl,
+      photoUrl: uploadedPhotoUrl || undefined,
       googlePlaceId: selectedCafe.google_place_id, // Pass Google Places ID separately
       // Include cafe details for creation if cafe doesn't exist in database
       cafeDetails: !selectedCafe.id ? {
         name: selectedCafe.name,
-        address: selectedCafe.address || selectedCafe.vicinity || 'Unknown Address',
+        address: selectedCafe.address || (selectedCafe as any).vicinity || 'Unknown Address',
         campus: selectedCafe.campus || campus || 'Unknown Campus',
-        google_place_id: selectedCafe.google_place_id || selectedCafe.place_id,
-        lat: selectedCafe.lat || selectedCafe.geometry?.location?.lat,
-        lng: selectedCafe.lng || selectedCafe.geometry?.location?.lng
+        google_place_id: selectedCafe.google_place_id || (selectedCafe as any).place_id,
+        lat: (selectedCafe as any).lat || (selectedCafe as any).geometry?.location?.lat,
+        lng: (selectedCafe as any).lng || (selectedCafe as any).geometry?.location?.lng
       } : undefined
     };
 
     console.log("📤 Review data being submitted:", reviewData);
     console.log("🏪 Cafe already exists in DB:", !!selectedCafe.id);
     console.log("🏪 Will create new cafe:", !selectedCafe.id && !!reviewData.cafeDetails);
+    console.log("🏪 Google Place ID for cafe:", reviewData.cafeDetails?.google_place_id || selectedCafe.google_place_id);
 
-    const result = await submitReview(reviewData);
-    
-    if (result) {
+    try {
+      const result = await submitReview(reviewData);
+      
+      if (!result) {
+        console.error("❌ [EDITOR] Review submission failed - no result returned");
+        return;
+      }
+      
+      console.log("✅ [EDITOR] Review submitted successfully:", result);
+      
       // Reset form
       setStep('search');
       setSelectedCafe(null);
@@ -145,6 +153,12 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
       
       // Go back to feed
       onBack?.();
+      
+    } catch (error: any) {
+      console.error("❌ [EDITOR] Review submission error:", error);
+      setErrors({ 
+        submit: error.message || 'Failed to submit review. Please try again.' 
+      });
     }
   };
 
