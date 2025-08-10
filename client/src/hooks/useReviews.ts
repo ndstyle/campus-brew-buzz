@@ -163,24 +163,63 @@ export const useReviews = () => {
       const decimalRating = Number(reviewData.rating);
       console.log('📝 [SUBMIT REVIEW] Submitting decimal rating:', decimalRating, 'formatted:', decimalRating.toFixed(1));
       
-      const { data: review, error: reviewError } = await supabase
+      // Check if user already has a review for this cafe
+      const { data: existingReview, error: checkError } = await supabase
         .from('reviews')
-        .upsert({
-          cafe_id: cafeId,
-          user_id: user.id,
-          rating: decimalRating, // Store as decimal in NUMERIC(3,1) column
-          blurb: reviewData.notes,
-          photo_url: reviewData.photoUrl
-        }, { 
-          onConflict: 'user_id,cafe_id',
-          ignoreDuplicates: false 
-        })
-        .select()
+        .select('id')
+        .eq('cafe_id', cafeId)
+        .eq('user_id', user.id)
         .single();
 
-      if (reviewError) {
-        console.error('❌ [SUBMIT REVIEW] Error submitting review:', reviewError);
-        throw reviewError;
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
+        console.error('❌ [SUBMIT REVIEW] Error checking for existing review:', checkError);
+        throw checkError;
+      }
+
+      let review;
+      if (existingReview) {
+        // Update existing review
+        console.log('📝 [SUBMIT REVIEW] Updating existing review with ID:', existingReview.id);
+        const { data: updatedReview, error: updateError } = await supabase
+          .from('reviews')
+          .update({
+            rating: decimalRating,
+            blurb: reviewData.notes,
+            photo_url: reviewData.photoUrl
+          })
+          .eq('id', existingReview.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('❌ [SUBMIT REVIEW] Error updating review:', updateError);
+          throw updateError;
+        }
+        review = updatedReview;
+      } else {
+        // Create new review
+        console.log('📝 [SUBMIT REVIEW] Creating new review');
+        const { data: newReview, error: insertError } = await supabase
+          .from('reviews')
+          .insert([{
+            cafe_id: cafeId,
+            user_id: user.id,
+            rating: decimalRating,
+            blurb: reviewData.notes,
+            photo_url: reviewData.photoUrl
+          }])
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('❌ [SUBMIT REVIEW] Error creating review:', insertError);
+          throw insertError;
+        }
+        review = newReview;
+      }
+
+      if (!review) {
+        throw new Error('Failed to create or update review');
       }
 
       console.log('✅ [SUBMIT REVIEW] Review submitted successfully with decimal rating:', review);
