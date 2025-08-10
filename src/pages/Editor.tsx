@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import CafeSearchAutocomplete from "@/components/CafeSearchAutocomplete";
 import { type CafeResult } from "@/hooks/useCafeSearch";
 import { useUserCampus } from "@/hooks/useUserCampus";
+import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 
 interface EditorProps {
   onBack?: () => void;
@@ -24,10 +25,12 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
   const [rating, setRating] = useState([7]);
   const [reviewText, setReviewText] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
   
   const { submitReview, isSubmitting } = useReviews();
   const { user } = useAuth();
   const { campus, loading: campusLoading } = useUserCampus();
+  const { uploadPhoto, uploading: photoUploading } = usePhotoUpload();
 
   const suggestedCafes = [
     { id: "blue-bottle-village", name: "Blue Bottle Coffee", location: "Greenwich Village", distance: "0.2 mi" },
@@ -81,8 +84,9 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
     const reviewData: ReviewSubmission = {
       cafeId: selectedCafe.id, // Use the UUID for database operations
       cafeName: selectedCafe.name,
-      rating: Math.round(rating[0] * 10) / 10, // Round to 1 decimal place
+      rating: rating[0], // Keep exact decimal value (1-10, step 0.1)
       notes: reviewText.trim(),
+      photoUrl: uploadedPhotoUrl,
       googlePlaceId: selectedCafe.google_place_id, // Pass Google Places ID separately
     };
 
@@ -96,6 +100,7 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
       setSelectedCafe(null);
       setRating([7]);
       setReviewText("");
+      setUploadedPhotoUrl(null);
       setErrors({});
       
       // Call callback to refresh feed
@@ -127,6 +132,16 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
     console.log("✅ [EDITOR] New cafe created:", newCafe);
     setSelectedCafe(newCafe);
     setStep('review');
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const photoUrl = await uploadPhoto(file);
+    if (photoUrl) {
+      setUploadedPhotoUrl(photoUrl);
+    }
   };
 
   const handleBackToSearch = () => {
@@ -268,13 +283,51 @@ const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
         {/* Photo Upload */}
         <Card className="p-4 mb-8">
           <h2 className="text-lg font-semibold text-foreground mb-3">Add Photos</h2>
-          <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
-            <Camera className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground mb-2">Tap to add photos</p>
-            <Button variant="outline" size="sm" disabled={isSubmitting}>
-              Choose Photos
-            </Button>
-          </div>
+          {uploadedPhotoUrl ? (
+            <div className="space-y-3">
+              <img 
+                src={uploadedPhotoUrl} 
+                alt="Review photo" 
+                className="w-full h-48 object-cover rounded-lg"
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setUploadedPhotoUrl(null)}
+                disabled={isSubmitting}
+              >
+                Remove Photo
+              </Button>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+              <Camera className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground mb-2">Add a photo (max 10MB, JPG/PNG only)</p>
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png"
+                onChange={handlePhotoUpload}
+                className="hidden"
+                id="photo-upload"
+                disabled={isSubmitting || photoUploading}
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={isSubmitting || photoUploading}
+                onClick={() => document.getElementById('photo-upload')?.click()}
+              >
+                {photoUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  'Choose Photo'
+                )}
+              </Button>
+            </div>
+          )}
         </Card>
 
         {/* Actions */}

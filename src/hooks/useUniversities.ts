@@ -81,6 +81,29 @@ export const useUniversities = () => {
       return { lat: 39.8283, lng: -98.5795, zoom: 4 }; // Center of USA
     }
 
+    // Static fallback for common universities when data is still loading
+    const staticCoordinates: { [key: string]: UniversityCoordinates } = {
+      'University of California, Los Angeles': { lat: 34.0689, lng: -118.4452, zoom: 15 },
+      'UCLA': { lat: 34.0689, lng: -118.4452, zoom: 15 },
+      'University of California, Berkeley': { lat: 37.8719, lng: -122.2585, zoom: 15 },
+      'UC Berkeley': { lat: 37.8719, lng: -122.2585, zoom: 15 },
+      'University of Illinois Urbana-Champaign': { lat: 40.1020, lng: -88.2272, zoom: 15 },
+      'UIUC': { lat: 40.1020, lng: -88.2272, zoom: 15 }
+    };
+
+    // Check static coordinates first (immediate response)
+    const staticMatch = staticCoordinates[universityName];
+    if (staticMatch) {
+      console.log(`⚡ [UNIVERSITIES] Static match found for "${universityName}":`, staticMatch);
+      return staticMatch;
+    }
+
+    // If universities data is still loading, return static fallback for UCLA
+    if (loading || universities.length === 0) {
+      console.log(`⏳ [UNIVERSITIES] Data still loading, using static fallback for "${universityName}"`);
+      return staticCoordinates['University of California, Los Angeles'];
+    }
+
     // First try exact match
     const exactMatch = universities.find(u => u.name.toLowerCase() === universityName.toLowerCase());
     if (exactMatch) {

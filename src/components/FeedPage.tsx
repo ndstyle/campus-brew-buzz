@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Bell, Menu, Heart, MessageCircle, Share, Plus, Bookmark, Search } from "lucide-react";
 import { useReviews } from "@/hooks/useReviews";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FeedPageProps {
   searchMode?: boolean;
@@ -48,6 +49,33 @@ const FeedPage = ({ searchMode = false, onReviewClick, onAddReview, refreshTrigg
       loadReviews();
     }
   }, [refreshTrigger]);
+
+  // Real-time subscription for new reviews
+  useEffect(() => {
+    console.log('🔄 [FEED REALTIME] Setting up real-time subscription');
+    
+    const channel = supabase
+      .channel('reviews-feed')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'reviews'
+        },
+        (payload) => {
+          console.log('⚡ [FEED REALTIME] New review received:', payload);
+          // Reload reviews to get the new one with joins
+          loadReviews();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔄 [FEED REALTIME] Cleaning up subscription');
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const filteredReviews = useMemo(() => {
     let filtered = reviews;

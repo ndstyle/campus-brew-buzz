@@ -36,11 +36,44 @@ export const useReviews = () => {
       return false;
     }
 
+    // Rate limiting check: 10 reviews per hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    try {
+      const { count: recentReviews, error: countError } = await supabase
+        .from('reviews')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', oneHourAgo);
+
+      if (countError) throw countError;
+      
+      if ((recentReviews || 0) >= 10) {
+        toast({
+          title: "Rate limit exceeded (429)",
+          description: "You can only submit 10 reviews per hour. Please try again later.",
+          variant: "destructive"
+        });
+        return false;
+      }
+    } catch (err: any) {
+      console.error('❌ [SUBMIT REVIEW] Rate limit check failed:', err);
+    }
+
     console.log('📝 [SUBMIT REVIEW] Starting review submission:', reviewData);
     console.log('📝 [SUBMIT REVIEW] Rating value and type:', reviewData.rating, typeof reviewData.rating);
     setIsSubmitting(true);
 
     try {
+      // Validate rating range
+      if (reviewData.rating < 1.0 || reviewData.rating > 10.0) {
+        toast({
+          title: "Invalid rating",
+          description: "Rating must be between 1.0 and 10.0",
+          variant: "destructive"
+        });
+        return false;
+      }
+
       let cafeId = reviewData.cafeId;
 
       // Create cafe if it doesn't exist
@@ -73,18 +106,21 @@ export const useReviews = () => {
         throw new Error('No cafe ID available for review submission');
       }
 
-      // Submit the review with decimal rating (NO Math.round()!)
+      // Submit the review with upsert (replaces existing review for same user/cafe)
       const decimalRating = Number(reviewData.rating);
       console.log('📝 [SUBMIT REVIEW] Submitting decimal rating:', decimalRating, 'formatted:', decimalRating.toFixed(1));
       
       const { data: review, error: reviewError } = await supabase
         .from('reviews')
-        .insert({
+        .upsert({
           cafe_id: cafeId,
           user_id: user.id,
           rating: decimalRating, // Store as decimal in NUMERIC(3,1) column
           blurb: reviewData.notes,
           photo_url: reviewData.photoUrl
+        }, { 
+          onConflict: 'user_id,cafe_id',
+          ignoreDuplicates: false 
         })
         .select()
         .single();
