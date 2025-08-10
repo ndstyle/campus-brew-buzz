@@ -124,6 +124,14 @@ All colors MUST be HSL.
   }
 
   .mobile-safe-area {
-    @apply px-4 pt-safe-top pb-safe-bottom;
+    @apply px-4 pt-4 pb-4;
+  }
+  
+  /* iOS safe area support */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    .mobile-safe-area {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
   }
 }
