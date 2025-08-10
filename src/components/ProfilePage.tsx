@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Bell, Menu, CheckCircle, Bookmark, Heart, Lock, Trophy, Plus, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ProfilePageProps {
   onStatClick?: (statType: string) => void;
@@ -44,7 +46,24 @@ const ProfilePage = ({ onStatClick }: ProfilePageProps) => {
             </p>
             
             <div className="flex space-x-4 justify-center">
-              <Button variant="outline" size="sm" className="rounded-full">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="rounded-full"
+                onClick={async () => {
+                  const username = prompt('Enter new username');
+                  if (!username) return;
+                  try {
+                    const { error: fnErr } = await supabase.functions.invoke('profile', {
+                      body: { action: 'update', update: { username } }
+                    });
+                    if (fnErr) throw fnErr;
+                    toast.success('Profile updated');
+                  } catch (e: any) {
+                    toast.error(e?.message || 'Update failed');
+                  }
+                }}
+              >
                 Edit profile
               </Button>
               <Button variant="outline" size="sm" className="rounded-full">

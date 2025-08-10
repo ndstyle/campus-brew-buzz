@@ -145,6 +145,11 @@ const LeaderboardPage = () => {
             </div>
           </div>
 
+          {/* Scoring Info */}
+          <div className="mb-4 px-2 text-xs text-muted-foreground">
+            How scoring works: score = reviews_count + 0.5 × photos_count
+          </div>
+
           {/* Rankings List */}
           <div className="space-y-2">
             {loading && <div className="p-3 text-sm text-muted-foreground">Loading…</div>}
