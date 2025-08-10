@@ -23,6 +23,7 @@ const Index = () => {
   const [currentView, setCurrentView] = useState<AppView>("feed");
   const [selectedReview, setSelectedReview] = useState<any>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [selectedCafeForReview, setSelectedCafeForReview] = useState<any>(null);
   const { user, loading } = useAuth();
 
   useEffect(() => {
@@ -40,12 +41,22 @@ const Index = () => {
     setRefreshTrigger(prev => prev + 1);
   };
 
-  const handleAddReview = () => {
+  const handleAddReview = (cafe?: any) => {
     if (!user) {
       // If user is not authenticated, redirect to sign in
       setAppState("signin");
       return;
     }
+    
+    // If a cafe is provided (from map marker), store it for autofill
+    if (cafe) {
+      console.log('🎯 [INDEX] Setting selected cafe for review autofill:', cafe);
+      setSelectedCafeForReview(cafe);
+    } else {
+      // Clear selection if no cafe provided (e.g., from Add Review button)
+      setSelectedCafeForReview(null);
+    }
+    
     setCurrentView("editor");
   };
 
@@ -118,8 +129,16 @@ const Index = () => {
               )}
               {currentView === "editor" && (
                 <Editor 
-                  onBack={() => setCurrentView(activeTab as AppView)}
-                  onReviewSubmitted={handleReviewSubmitted}
+                  onBack={() => {
+                    setCurrentView(activeTab as AppView);
+                    setSelectedCafeForReview(null); // Clear selection when going back
+                  }} 
+                  onReviewSubmitted={() => {
+                    handleReviewSubmitted();
+                    setCurrentView(activeTab as AppView);
+                    setSelectedCafeForReview(null); // Clear selection after submission
+                  }}
+                  prefilledCafe={selectedCafeForReview} // Pass the selected cafe for autofill
                 />
               )}
               {currentView === "preview" && (

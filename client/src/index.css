@@ -4,6 +4,37 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Beli-inspired cafe info card animations */
+@layer utilities {
+  .animate-slide-in-bottom {
+    animation: slideInBottom 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  @keyframes slideInBottom {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
 /* RateUrCoffee Design System - Campus Coffee Culture
 Primary: Purple #8B5FBF with clean white backgrounds
 Typography: Inter font family for modern, clean readability

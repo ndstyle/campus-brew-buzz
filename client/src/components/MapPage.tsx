@@ -36,6 +36,7 @@ const MapPage = ({ onAddReview }) => {
   }, [campus, campusLoading, universitiesLoading, mapCenter]); // Remove function dependencies to prevent loops
 
   const handleAddReview = (cafe) => {
+    console.log('🗺️ [MAP PAGE] Handling add review for cafe:', cafe);
     if (onAddReview) {
       onAddReview(cafe);
     }

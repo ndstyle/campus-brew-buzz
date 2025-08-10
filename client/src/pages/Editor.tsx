@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,15 +17,40 @@ import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 interface EditorProps {
   onBack?: () => void;
   onReviewSubmitted?: () => void;
+  prefilledCafe?: CafeResult | null; // Autofill cafe from map selection
 }
 
-const Editor = ({ onBack, onReviewSubmitted }: EditorProps) => {
-  const [step, setStep] = useState<'search' | 'review'>('search');
-  const [selectedCafe, setSelectedCafe] = useState<CafeResult | null>(null);
+const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
+  const [step, setStep] = useState<'search' | 'review'>(prefilledCafe ? 'review' : 'search');
+  const [selectedCafe, setSelectedCafe] = useState<CafeResult | null>(prefilledCafe || null);
   const [rating, setRating] = useState([7]);
   const [reviewText, setReviewText] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
+
+  // Log autofill functionality and transform map data if needed
+  useEffect(() => {
+    if (prefilledCafe) {
+      console.log('🎯 [EDITOR] Autofilled with cafe from map:', prefilledCafe);
+      
+      // If the cafe data is from map markers, it might need transformation
+      // Map data structure vs Editor expected structure
+      const transformedCafe = {
+        ...prefilledCafe,
+        // Ensure we have the right field names
+        google_place_id: prefilledCafe.google_place_id || prefilledCafe.place_id,
+        address: prefilledCafe.address || prefilledCafe.vicinity,
+        campus: prefilledCafe.campus || campus // Use user's campus if not provided
+      };
+      
+      console.log('🎯 [EDITOR] Transformed cafe data:', transformedCafe);
+      
+      // Update the selected cafe if there were any transformations
+      if (transformedCafe !== prefilledCafe) {
+        setSelectedCafe(transformedCafe);
+      }
+    }
+  }, [prefilledCafe, campus]);
   
   const { submitReview, isSubmitting } = useReviews();
   const { user } = useAuth();

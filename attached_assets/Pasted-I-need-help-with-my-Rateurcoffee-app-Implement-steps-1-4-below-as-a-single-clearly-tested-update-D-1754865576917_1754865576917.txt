@@ -1,0 +1,51 @@
+I need help with my Rateurcoffee app. Implement steps 1–4 below as a single clearly tested update. Do NOT change anything unrelated (e.g., environment variables, supabase/schema, auth, navigation). No “fixed” claims until each item is working and visually proven via screenshot/video and console logs.
+
+### 1. Review Autofill After Map Marker Selection
+
+- When a user clicks a coffee shop marker on the map and taps “Add Review,” the review form must autofill with the selected coffee shop info (name, campus, address, ID).
+- Do NOT require manual typing or searching for the cafe again.
+- If the form is opened from anywhere else (e.g., add review page directly), leave current behavior as is.
+- Confirm the form autofills instantly with proper info for multiple selections (not just first click).
+
+### 2. “Beli”-Inspired Cafe Info Cards
+
+- When the user taps any cafe marker, show a beautiful, animated bottom or slide-up info card modeled after the second attached screenshot (Beli card style).
+- The card must display:
+  - Large cafe name (font and layout like Beli)
+  - Star rating + # of reviews prominently
+  - Price level ($–$$$ if data available)
+  - Address and campus
+  - Quick actions: “Call,” “Directions,” “Website” (if available), and “Add Review” button
+  - Thumbnail café photo (if available)
+- Use purple accents and card stylings inspired by Beli for WOW factor—not basic/default.
+- Card must animate smoothly and dismiss easily.
+
+### 3. Card UI/UX Must Look “Cool”
+
+- Make UI visually impressive, distinctly different from default browser cards.
+- Add stylish shadows, gradients, and smooth slide-up/slide-down animation.
+- Use playful/modern fonts that fit the Rateurcoffee/Beli vibe.
+- Details (like micro-animations when rating loads, button hover/click effects) must be present.
+
+### 4. “Add Review” Button Must Seamlessly Connect
+
+- “Add Review” opens the review form instantly, with the selected cafe already filled in (see step 1).
+- Review submission must save to the correct cafe/user.
+- On submission, info card should update rating/review count and dismiss automatically.
+
+### Proof of Fix (Required):
+
+- Provide screenshots or video of the following:
+  - Clicking multiple cafe markers → each info card animates and shows correct data
+  - “Add Review” button autofills form and submits a review (console logs)
+  - Map shows updated review/rating on card after submission—all without manual cafe typing.
+  - No regression in navigation, other review flows, authentication, or environment.
+
+### Strict Requirements:
+
+- NO changes whatsoever to environment variables, supabase schema, unrelated feature code.
+- Do NOT touch unrelated logic or styling.
+- Verify via user interaction testing.
+- LOG any autofill and review submission console results, and show UI/UX improvement clearly.
+
+Focus only on these core features and UI polish to deliver a visually attractive, seamless MVP experience. Do NOT claim completion until all issues and flows above are tested and screenshots/proof are provided.
