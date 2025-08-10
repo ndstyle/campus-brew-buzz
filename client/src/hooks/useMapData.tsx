@@ -18,6 +18,7 @@ export const useMapData = () => {
     console.log(`🗺️ [MAP DATA DEBUG] ${message}`, data || '');
   };
 
+  // Make fetchCafes stable with no dependencies to prevent infinite loops
   const fetchCafes = useCallback(async (userCampus = null, center = null) => {
     setLoading(true);
     setError(null);
@@ -137,7 +138,7 @@ export const useMapData = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast, searchNearbyPlaces]);
+  }, [user, toast, searchNearbyPlaces]); // Include essential dependencies
 
   // Function to test Google Places API with debug info
   const testGooglePlacesAPI = useCallback(async (center) => {
@@ -147,8 +148,11 @@ export const useMapData = () => {
       return;
     }
     
-    await testPlacesAPI();
-  }, [testPlacesAPI]);
+    // Call testPlacesAPI directly if available
+    if (testPlacesAPI) {
+      await testPlacesAPI();
+    }
+  }, [testPlacesAPI]); // Include testPlacesAPI but it should be stable
 
   // Set up real-time subscription for new cafes
   useEffect(() => {

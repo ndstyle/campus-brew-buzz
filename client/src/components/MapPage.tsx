@@ -16,32 +16,24 @@ const MapPage = ({ onAddReview }) => {
   // Get initial map center based on user's college from database
   const [mapCenter, setLocalMapCenter] = useState(null);
 
-  // Update map center when campus is loaded
+  // Combined effect to prevent cascade re-renders - only run once when campus data is ready
   useEffect(() => {
-    if (!campusLoading && campus && !universitiesLoading) {
-      console.log('🗺️ [MAP PAGE] Setting map center for campus:', campus);
+    if (!campusLoading && campus && !universitiesLoading && !mapCenter) {
+      console.log('🗺️ [MAP PAGE] Setting up map for campus:', campus);
       const coordinates = getUniversityCoordinates(campus);
       console.log('🗺️ [MAP PAGE] Campus coordinates:', coordinates);
-      setLocalMapCenter(coordinates);
+      
+      if (coordinates) {
+        setLocalMapCenter(coordinates);
+        setMapCenter(coordinates);
+        
+        // Fetch cafes and test API once
+        console.log('🗺️ [MAP PAGE] Fetching cafes for campus:', campus);
+        fetchCafes(campus, coordinates);
+        testGooglePlacesAPI(coordinates);
+      }
     }
-  }, [campus, campusLoading, universitiesLoading, getUniversityCoordinates]);
-
-  // Fetch coffee shops when map center is available
-  useEffect(() => {
-    if (mapCenter && campus) {
-      console.log('🗺️ [MAP PAGE] Fetching cafes for campus:', campus, 'at coordinates:', mapCenter);
-      setMapCenter(mapCenter);
-      fetchCafes(campus, mapCenter);
-    }
-  }, [mapCenter, campus, fetchCafes, setMapCenter]);
-
-  // Test Google Places API when map center is available
-  useEffect(() => {
-    if (mapCenter) {
-      console.log('🗺️ [MAP PAGE] Testing Google Places API at coordinates:', mapCenter);
-      testGooglePlacesAPI(mapCenter);
-    }
-  }, [mapCenter, testGooglePlacesAPI]);
+  }, [campus, campusLoading, universitiesLoading, mapCenter]); // Remove function dependencies to prevent loops
 
   const handleAddReview = (cafe) => {
     if (onAddReview) {

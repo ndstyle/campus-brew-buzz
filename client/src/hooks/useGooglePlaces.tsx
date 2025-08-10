@@ -85,51 +85,74 @@ export const useGooglePlaces = () => {
       setPlacesError(err.message);
       setPlacesLoading(false);
       
-      toast({
-        title: "Places Search Error",
-        description: `Failed to load nearby cafes: ${err.message}`,
-        variant: "destructive",
-      });
+      // Use toast if available
+      if (toast) {
+        toast({
+          title: "Places Search Error",
+          description: `Failed to load nearby cafes: ${err.message}`,
+          variant: "destructive",
+        });
+      }
       
       return [];
     }
   }, []);
 
-  // Test the Places API connection
+  // Test the Places API connection - simple test that doesn't depend on other functions
   const testPlacesAPI = useCallback(async () => {
     debugLog('🧪 Testing Places API via Edge Function...');
     
     try {
-      // Test with a known location (San Francisco)
+      // Test with a known location (San Francisco) - call API directly
       const testCenter = { lat: 37.7749, lng: -122.4194 };
-      const results = await searchNearbyPlaces(testCenter, 1000);
       
-      if (results.length > 0) {
-        debugLog('✅ Places API test successful:', `${results.length} places found`);
-        toast({
-          title: "Places API Test Successful",
-          description: `Found ${results.length} places near test location`,
-        });
+      const { data, error } = await supabase.functions.invoke('places-search', {
+        body: {
+          searchQuery: 'coffee cafe',
+          location: {
+            lat: testCenter.lat,
+            lng: testCenter.lng
+          },
+          radius: 1000
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.status === 'OK' && data.results?.length > 0) {
+        debugLog('✅ Places API test successful:', `${data.results.length} places found`);
+        if (toast) {
+          toast({
+            title: "Places API Test Successful",
+            description: `Found ${data.results.length} places near test location`,
+          });
+        }
         return true;
       } else {
-        debugLog('⚠️ Places API test returned no results');
-        toast({
-          title: "Places API Test Warning",
-          description: "API is working but no places found in test area",
-          variant: "destructive",
-        });
+        debugLog('⚠️ Places API test returned no results or error status:', data.status);
+        if (toast) {
+          toast({
+            title: "Places API Test Warning",
+            description: "API is working but no places found in test area",
+            variant: "destructive",
+          });
+        }
         return false;
       }
     } catch (err) {
       debugLog('❌ Places API test failed:', err);
-      toast({
-        title: "Places API Test Failed",
-        description: err.message,
-        variant: "destructive",
-      });
+      if (toast) {
+        toast({
+          title: "Places API Test Failed",
+          description: err.message,
+          variant: "destructive",
+        });
+      }
       return false;
     }
-  }, [searchNearbyPlaces]);
+  }, []); // No dependencies needed
 
   return {
     searchNearbyPlaces,
