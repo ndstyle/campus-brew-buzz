@@ -28,34 +28,35 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
 
+  // Initialize hooks BEFORE useEffect to prevent "cannot access before initialization" error
+  const { submitReview, isSubmitting } = useReviews();
+  const { user } = useAuth();
+  const { campus, loading: campusLoading } = useUserCampus();
+  const { uploadPhoto, uploading: photoUploading } = usePhotoUpload();
+
   // Log autofill functionality and transform map data if needed
   useEffect(() => {
     if (prefilledCafe) {
       console.log('🎯 [EDITOR] Autofilled with cafe from map:', prefilledCafe);
       
       // If the cafe data is from map markers, it might need transformation
-      // Map data structure vs Editor expected structure
+      // Map data structure vs Editor expected structure with safe null checks
       const transformedCafe = {
         ...prefilledCafe,
-        // Ensure we have the right field names
-        google_place_id: prefilledCafe.google_place_id || prefilledCafe.place_id,
-        address: prefilledCafe.address || prefilledCafe.vicinity,
-        campus: prefilledCafe.campus || campus // Use user's campus if not provided
+        // Ensure we have the right field names with proper null/undefined handling
+        google_place_id: prefilledCafe.google_place_id || prefilledCafe.place_id || null,
+        address: prefilledCafe.address || prefilledCafe.vicinity || '',
+        campus: prefilledCafe.campus || campus || 'Unknown Campus' // Safe fallback
       };
       
       console.log('🎯 [EDITOR] Transformed cafe data:', transformedCafe);
       
       // Update the selected cafe if there were any transformations
-      if (transformedCafe !== prefilledCafe) {
+      if (JSON.stringify(transformedCafe) !== JSON.stringify(prefilledCafe)) {
         setSelectedCafe(transformedCafe);
       }
     }
-  }, [prefilledCafe, campus]);
-  
-  const { submitReview, isSubmitting } = useReviews();
-  const { user } = useAuth();
-  const { campus, loading: campusLoading } = useUserCampus();
-  const { uploadPhoto, uploading: photoUploading } = usePhotoUpload();
+  }, [prefilledCafe, campus]); // Now campus is safely initialized
 
   const suggestedCafes = [
     { id: "blue-bottle-village", name: "Blue Bottle Coffee", location: "Greenwich Village", distance: "0.2 mi" },

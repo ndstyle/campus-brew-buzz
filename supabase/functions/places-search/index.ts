@@ -43,32 +43,68 @@ serve(async (req) => {
       )
     }
 
-    // Construct Google Places API URL for nearby search
-    const placesUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json')
-    placesUrl.searchParams.append('key', GOOGLE_PLACES_API_KEY)
-    placesUrl.searchParams.append('location', `${location.lat},${location.lng}`)
-    placesUrl.searchParams.append('radius', radius.toString())
-    placesUrl.searchParams.append('keyword', searchQuery)
-    placesUrl.searchParams.append('type', 'cafe')
+    // Multiple API calls to get comprehensive beverage spots
+    const placeTypes = ['cafe', 'restaurant']; // Keep restaurant to catch tea/boba places
+    const allResults: any[] = [];
 
-    console.log('Fetching places from:', placesUrl.toString())
+    console.log('🔍 Fetching expanded places with multiple types and keywords...');
 
-    const response = await fetch(placesUrl.toString())
-    const data = await response.json()
+    for (const type of placeTypes) {
+      const placesUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json')
+      placesUrl.searchParams.append('key', GOOGLE_PLACES_API_KEY)
+      placesUrl.searchParams.append('location', `${location.lat},${location.lng}`)
+      placesUrl.searchParams.append('radius', radius.toString())
+      placesUrl.searchParams.append('type', type)
+      
+      // Expanded keyword search to include boba, matcha, tea, coffee, etc.
+      const expandedKeyword = `${searchQuery} OR coffee OR cafe OR espresso OR matcha OR boba OR tea OR "bubble tea"`
+      placesUrl.searchParams.append('keyword', expandedKeyword)
 
-    if (!response.ok) {
-      console.error('Google Places API error:', data)
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch places from Google API', details: data }),
-        { 
-          status: response.status, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      console.log(`Fetching ${type} places from:`, placesUrl.toString())
+
+      try {
+        const response = await fetch(placesUrl.toString())
+        const data = await response.json()
+
+        if (response.ok && data.results) {
+          // Filter results to only include beverage-related places
+          const beverageResults = data.results.filter((place: any) => {
+            const name = place.name?.toLowerCase() || '';
+            const types = place.types || [];
+            
+            // Include if name contains beverage keywords
+            const hasKeyword = name.includes('coffee') || name.includes('cafe') || 
+                              name.includes('espresso') || name.includes('matcha') || 
+                              name.includes('boba') || name.includes('tea') || 
+                              name.includes('bubble') || name.includes('latte') ||
+                              name.includes('brew') || name.includes('roast') ||
+                              name.includes('bean');
+            
+            // Include if it's a cafe type
+            const isCafe = types.includes('cafe');
+            
+            return hasKeyword || isCafe;
+          });
+          
+          allResults.push(...beverageResults);
+          console.log(`✅ Found ${beverageResults.length} relevant ${type} places`);
+        } else {
+          console.error(`❌ Error fetching ${type} places:`, data);
         }
-      )
+      } catch (error) {
+        console.error(`❌ Network error fetching ${type} places:`, error);
+      }
     }
 
+    // Remove duplicates based on place_id
+    const uniqueResults = allResults.filter((place, index, array) => 
+      array.findIndex(p => p.place_id === place.place_id) === index
+    );
+
+    console.log(`🎯 Total unique beverage places found: ${uniqueResults.length}`);
+
     // Transform the response to match your frontend expectations
-    const transformedResults = data.results?.map((place: any) => ({
+    const transformedResults = uniqueResults?.map((place: any) => ({
       place_id: place.place_id,
       name: place.name,
       vicinity: place.vicinity,
@@ -93,8 +129,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         results: transformedResults,
-        status: data.status,
-        next_page_token: data.next_page_token
+        total_found: transformedResults.length,
+        search_types: placeTypes
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

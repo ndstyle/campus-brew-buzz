@@ -1,0 +1,35 @@
+Two urgent issues in Rateurcoffee’s Find Coffee/Map flow require immediate attention. Only fix the bugs and expand the place inclusivity described below. Do NOT change any unrelated logic, environment variables, database schema, or break working features.
+
+### 1. Review Form Crash (“Cannot access 'campus' before initialization”)
+
+- When opening the review submission form from a cafe info card, the app crashes with: “Cannot access 'campus' before initialization.”
+- Audit the Editor.tsx and any related useEffect/useState code:
+  - Ensure ‘campus’ and ‘prefilledCafe’ are always initialized and available before being accessed/dependent in any effect or form logic.
+  - Add proper null/undefined checks and default values for these dependencies.
+  - Guarantee the review form always pre-fills correctly with the selected cafe info and does not crash, regardless of marker or navigation flow.
+  - After fix, test: Clicking "Add Review" from any cafe marker card opens the form and allows submission with the café properly prefilled.
+
+### 2. expand “Coffee Shop” Definition (Include Boba, Matcha, etc.)
+
+- The current place fetching logic is too strict—only ~18–20 cafes show up per campus.
+- Update the backend (Edge Function and any filtering code) to:
+   - Include Google Places types: 'cafe', 'bubble_tea', 'tea', 'restaurant', and expand keyword search to include “matcha”, “boba”, “tea”, “coffee”.
+   - Accept any place with a name containing “coffee”, “cafe”, “espresso”, “matcha”, “boba”, “tea”, or similar beverage keywords.
+   - Ensure results include all relevant spots, not just traditional coffee shops.
+   - Markers and info cards must display for all these shops, with proper type disclosure where possible.
+
+### Proof of Completion (Do NOT Mark Fixed Until):
+
+- Show screenshots/video:
+   - Opening “Add Review” from any marker card now always works; no crash, form prefilled.
+   - Newly included places (tea/boba/matcha shops etc.) appear as markers and show info cards.
+   - Submitting review from an info card works and data updates as expected.
+   - No regression in map functionality, navigation, or review workflow; all old features still work.
+
+### Strict Requirements:
+
+- Do not change unrelated app logic, env variables, or database schema.
+- Test by clicking markers for various types (coffee, matcha, boba, tea); all should work.
+- Provide console logs/screens for successful review submissions and increased place count.
+
+Fix only what’s described, and verify thoroughly before claiming fixed.
