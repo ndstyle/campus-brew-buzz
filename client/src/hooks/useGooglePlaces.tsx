@@ -93,7 +93,7 @@ export const useGooglePlaces = () => {
       
       return [];
     }
-  }, [toast]);
+  }, []);
 
   // Test the Places API connection
   const testPlacesAPI = useCallback(async () => {
@@ -129,7 +129,7 @@ export const useGooglePlaces = () => {
       });
       return false;
     }
-  }, [searchNearbyPlaces, toast]);
+  }, [searchNearbyPlaces]);
 
   return {
     searchNearbyPlaces,

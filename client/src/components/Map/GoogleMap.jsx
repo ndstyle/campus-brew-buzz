@@ -135,12 +135,13 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
     }
   };
 
-  // Simple Google Maps initialization
+  // Simple Google Maps initialization - ONLY runs once when component mounts
   useEffect(() => {
-    if (!mapRef.current || !center) {
-      console.log('❌ [INIT] Missing requirements:', {
+    if (!mapRef.current || !center || mapInstanceRef.current) {
+      console.log('❌ [INIT] Missing requirements or map already initialized:', {
         mapRef: !!mapRef.current,
-        center: !!center
+        center: !!center,
+        mapAlreadyExists: !!mapInstanceRef.current
       });
       return;
     }
@@ -237,7 +238,7 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [center, zoom]);
+  }, []); // Only run once when component mounts
 
   // Create custom marker icon
   const createMarkerIcon = (isSelected = false, hasUserReview = false) => {
@@ -304,7 +305,7 @@ const GoogleMap = ({ center, zoom = 15, cafes = [], onAddReview, loading: cafesL
     });
 
     console.log('✅ [MARKERS] Created', markersRef.current.length, 'markers');
-  }, [cafes, selectedCafe]);
+  }, [cafes]); // Remove selectedCafe dependency to prevent infinite loops
 
 
   // Error state

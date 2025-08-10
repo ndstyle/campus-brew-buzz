@@ -1,0 +1,51 @@
+
+I need immediate help fixing critical issues in my Rateurcoffee app’s Find Coffee/Map functionality while preserving all existing features and code. Be very careful to avoid breaking anything else.
+
+### Current Known Issues:
+1. The Google Places API calls from the Supabase Edge Function are returning `REQUEST_DENIED`, despite no API key restrictions being set and billing being active.
+2. The frontend map is stuck in an infinite refetch loop, causing flickering and continuous reloads.
+3. The Google Maps base map loads but never stabilizes and no cafe markers appear.
+4. The Supabase Edge Function is correctly deployed, fetches the API key, but Google denies the Places API requests.
+5. Other app features (authentication, review UI, navigation) should remain untouched.
+6. The Edge Function environment variable for `GOOGLE_PLACES_API_KEY` is set and should be correctly accessible.
+
+### What You Must Do:
+
+**Step 1: Fix Edge Function Google Places API `REQUEST_DENIED`**
+
+- Double-check that the Google Places API is explicitly ENABLED in the Google Cloud Console along with the Maps JavaScript API.
+- Verify that the API key used by the Edge Function is exactly the same one shown in the logs (length 39, prefix "AIzaSyCnbJ...").
+- Check Google Cloud Console API key for:
+   - No application restrictions set OR if restrictions exist, they include both the frontend domains and the IP ranges or environment of Supabase Edge Functions.
+   - API restrictions include both Places API and Maps JavaScript API.
+- Make sure billing is fully activated and there are no quota or payment issues.
+- Redeploy the Supabase Edge Function to pick up any environment variable changes. Confirm the function logs show the key exists before making the API call.
+- Test the Edge Function independently with a valid location and radius, ensure it returns a successful response (status 'OK') with places data.
+
+**Step 2: Fix Infinite Refetch Loop in Frontend Map Component**
+
+- Refactor the React map component to ONLY fetch places once on mount or on explicit user interaction.
+- Use a proper `useEffect` hook with a stable dependency array to avoid triggering repeated fetches on every render.
+- Ensure all state updates inside the fetch call do not trigger immediate re-renders that call the fetch again.
+- Separate Google Maps API script loading from place fetching to only load the script once asynchronously.
+- Add console logs to trace fetch triggers and abort redundant calls.
+
+**Step 3: Confirm Cafe Markers Display**
+
+- Once the above fixes are done, verify that cafe markers appear on the map centered at University of California, Berkeley.
+- Markers should use the existing custom black circular style and be clickable.
+- Place markers from both Supabase database cafes and Google Places API combined seamlessly.
+
+**Step 4: Keep All Other Features Untouched**
+
+- Authentication, review submission UI, bottom navigation, and feed should remain as is.
+- Do not modify any code unrelated to map loading, place fetching, or Edge Function setup.
+- Maintain existing environment variable conventions and project structure.
+
+### Deliverables:
+
+- Confirm Google Cloud API key configurations and deploy Edge Function properly.
+- Refactored React map component code to fix fetch loop.
+- Demonstrate cafes showing as markers on the map.
+- Provide error-free logs showing Google Places API calls returning valid data.
+- Confirm all other app features continue working as before without regressions.
