@@ -95,6 +95,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Verify college was saved to database (with a delay for DB trigger)
           setTimeout(async () => {
             try {
+              if (!data.user?.id) return;
+              
               const { data: userDbData, error: fetchError } = await supabase
                 .from('users')
                 .select('college')
