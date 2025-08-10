@@ -76,11 +76,18 @@ export const useReviews = () => {
 
       let cafeId = reviewData.cafeId;
 
-      // Handle cafe creation/retrieval with UPSERT to avoid constraint violations
+      // Handle cafe creation/retrieval with SELECT-then-INSERT pattern
       if (!cafeId && reviewData.cafeDetails) {
-        console.log('🏪 [SUBMIT REVIEW] UPSERTING cafe (create or get existing):', reviewData.cafeDetails);
+        console.log('🏪 [SUBMIT REVIEW] Processing cafe (create or get existing):', reviewData.cafeDetails);
         
-        // First try to find existing cafe by google_place_id
+        // Validate google_place_id exists
+        if (!reviewData.cafeDetails.google_place_id) {
+          throw new Error('Missing google_place_id for cafe creation');
+        }
+
+        // First, try to find existing cafe by google_place_id
+        console.log('🔍 [SUBMIT REVIEW] Searching for existing cafe with google_place_id:', reviewData.cafeDetails.google_place_id);
+        
         const { data: existingCafe, error: findError } = await supabase
           .from('cafes')
           .select('id')
@@ -88,7 +95,7 @@ export const useReviews = () => {
           .single();
 
         if (findError && findError.code !== 'PGRST116') { // PGRST116 = no rows found
-          console.error('❌ [SUBMIT REVIEW] Error finding existing cafe:', findError);
+          console.error('❌ [SUBMIT REVIEW] Error searching for existing cafe:', findError);
           throw findError;
         }
 
@@ -97,32 +104,49 @@ export const useReviews = () => {
           cafeId = existingCafe.id;
           console.log('✅ [SUBMIT REVIEW] Found existing cafe with ID:', cafeId);
         } else {
-          // Cafe doesn't exist, create new one with INSERT ... ON CONFLICT
-          console.log('🏪 [SUBMIT REVIEW] Creating new cafe with UPSERT...');
+          // Cafe doesn't exist, create new one with INSERT
+          console.log('🏪 [SUBMIT REVIEW] Creating new cafe...');
           
-          const { data: upsertedCafe, error: cafeError } = await supabase
+          const { data: newCafe, error: cafeError } = await supabase
             .from('cafes')
-            .upsert({
+            .insert([{
               name: reviewData.cafeDetails.name,
-              address: reviewData.cafeDetails.address,
-              campus: reviewData.cafeDetails.campus,
+              address: reviewData.cafeDetails.address || null,
+              campus: reviewData.cafeDetails.campus || null,
               google_place_id: reviewData.cafeDetails.google_place_id,
-              lat: reviewData.cafeDetails.lat,
-              lng: reviewData.cafeDetails.lng
-            }, {
-              onConflict: 'google_place_id',
-              ignoreDuplicates: false
-            })
+              lat: reviewData.cafeDetails.lat || null,
+              lng: reviewData.cafeDetails.lng || null
+            }])
             .select('id')
             .single();
 
           if (cafeError) {
-            console.error('❌ [SUBMIT REVIEW] Error upserting cafe:', cafeError);
-            throw cafeError;
+            console.error('❌ [SUBMIT REVIEW] Error creating new cafe:', cafeError);
+            
+            // If it's a duplicate key error, try to find the existing cafe again
+            if (cafeError.code === '23505') { // PostgreSQL unique constraint violation
+              console.log('🔄 [SUBMIT REVIEW] Duplicate key detected, trying to find existing cafe again...');
+              
+              const { data: retryExistingCafe, error: retryError } = await supabase
+                .from('cafes')
+                .select('id')
+                .eq('google_place_id', reviewData.cafeDetails.google_place_id!)
+                .single();
+              
+              if (retryError) {
+                console.error('❌ [SUBMIT REVIEW] Error finding cafe on retry:', retryError);
+                throw retryError;
+              }
+              
+              cafeId = retryExistingCafe.id;
+              console.log('✅ [SUBMIT REVIEW] Found existing cafe on retry with ID:', cafeId);
+            } else {
+              throw cafeError;
+            }
+          } else {
+            cafeId = newCafe.id;
+            console.log('✅ [SUBMIT REVIEW] New cafe created with ID:', cafeId);
           }
-
-          cafeId = upsertedCafe.id;
-          console.log('✅ [SUBMIT REVIEW] Cafe upserted with ID:', cafeId);
         }
       }
 
