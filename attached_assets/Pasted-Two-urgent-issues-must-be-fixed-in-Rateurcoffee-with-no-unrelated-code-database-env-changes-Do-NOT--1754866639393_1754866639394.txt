@@ -1,0 +1,39 @@
+Two urgent issues must be fixed in Rateurcoffee with no unrelated code/database/env changes. Do NOT claim completion until both are proven in user testing and screenshots.
+
+## 1. Uploaded Images Must Display
+
+- Photos uploaded with reviews, cafe cards, or user profiles are NOT appearing in the UI.
+- Audit and fix image upload and display pipeline:
+    - Ensure images are stored correctly in Supabase Storage (or backend).
+    - On display (review cards, cafe info cards, etc.), fetch public image URLs and show with <img> tags or equivalent components.
+    - Add logic for cache busting so the most recent uploaded photo appears—don’t let browser serve stale images.
+    - If photo isn’t available, display fallback image/placeholder.
+
+- TEST: Upload a new review photo, submit, and verify it appears instantly and properly on all relevant UI surfaces.
+
+## 2. “No cafe ID available for review submission” Error
+
+- When submitting a review from a cafe info card, an error appears: “Failed to submit review: No cafe ID available.”
+- Fix this workflow:
+    - When “Add Review” is triggered from a cafe card, always pass the full cafe object (including its id) to the review form via props/state/context.
+    - The review form must validate `cafe_id` before allowing submission.
+    - Prevent navigation or submission if `cafe_id` is missing or invalid; show a friendly error (“Please select a cafe”).
+    - If review form is opened independently, preserve current logic.
+
+- TEST: Clicking “Add Review” on any cafe card should instantly open a fully pre-filled form for that cafe, and submitting must succeed—no ID errors allowed.
+
+## Proof of Completion (MANDATORY):
+
+- Provide screenshots of:
+    - A review card or cafe info card with a user-uploaded image successfully displayed.
+    - Submitting a review with the form fully prefilled (cafe id present in logs, no error).
+    - Attempting to submit a review without a valid cafe ID shows correct error and prevents submission.
+    - All other app features (map, auth, navigation) remain unchanged and working.
+
+## Strict Requirements:
+
+- DO NOT change unrelated code, schema, features, or environment variables.
+- LOG all error cases and successful review submissions.
+- Test thoroughly via user interaction (not just unit or automated tests) and only claim as fixed once proof is provided.
+
+These fixes must decisively stabilize the review/photo flow and ensure flawless user experience.

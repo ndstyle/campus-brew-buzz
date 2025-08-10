@@ -108,15 +108,26 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
     console.log("🔍 Google Places ID type:", typeof selectedCafe.google_place_id);
 
     const reviewData: ReviewSubmission = {
-      cafeId: selectedCafe.id, // Use the UUID for database operations
+      cafeId: selectedCafe.id, // Use the UUID for database operations if exists
       cafeName: selectedCafe.name,
       rating: rating[0], // Keep exact decimal value (1-10, step 0.1)
       notes: reviewText.trim(),
       photoUrl: uploadedPhotoUrl,
       googlePlaceId: selectedCafe.google_place_id, // Pass Google Places ID separately
+      // Include cafe details for creation if cafe doesn't exist in database
+      cafeDetails: !selectedCafe.id ? {
+        name: selectedCafe.name,
+        address: selectedCafe.address || selectedCafe.vicinity || 'Unknown Address',
+        campus: selectedCafe.campus || campus || 'Unknown Campus',
+        google_place_id: selectedCafe.google_place_id || selectedCafe.place_id,
+        lat: selectedCafe.lat || selectedCafe.geometry?.location?.lat,
+        lng: selectedCafe.lng || selectedCafe.geometry?.location?.lng
+      } : undefined
     };
 
     console.log("📤 Review data being submitted:", reviewData);
+    console.log("🏪 Cafe already exists in DB:", !!selectedCafe.id);
+    console.log("🏪 Will create new cafe:", !selectedCafe.id && !!reviewData.cafeDetails);
 
     const result = await submitReview(reviewData);
     

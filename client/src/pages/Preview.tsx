@@ -155,9 +155,16 @@ const Preview = ({ review, onBack }: PreviewProps) => {
           {displayReview.photo_url && (
             <div className="grid grid-cols-1 gap-2 mb-4">
               <img
-                src={displayReview.photo_url}
-                alt="Review photo"
+                src={`${displayReview.photo_url}?${Date.now()}`}
+                alt={`Review photo by ${displayReview.users?.username || 'user'}`}
                 className="w-full h-48 object-cover rounded-lg"
+                onError={(e) => {
+                  console.log('❌ [IMAGE] Failed to load preview photo:', displayReview.photo_url);
+                  e.currentTarget.style.display = 'none';
+                }}
+                onLoad={() => {
+                  console.log('✅ [IMAGE] Successfully loaded preview photo:', displayReview.photo_url);
+                }}
               />
             </div>
           )}

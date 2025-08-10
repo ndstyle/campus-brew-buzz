@@ -301,9 +301,16 @@ const FeedPage = ({ searchMode = false, onReviewClick, onAddReview, refreshTrigg
                   {review.photo_url && (
                     <div className="mb-4">
                       <img
-                        src={review.photo_url}
-                        alt="Review photo"
+                        src={`${review.photo_url}?${Date.now()}`}
+                        alt={`Review photo by ${review.users?.username || 'user'}`}
                         className="w-full h-64 object-cover rounded-xl"
+                        onError={(e) => {
+                          console.log('❌ [IMAGE] Failed to load review photo:', review.photo_url);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                        onLoad={() => {
+                          console.log('✅ [IMAGE] Successfully loaded review photo:', review.photo_url);
+                        }}
                       />
                     </div>
                   )}
