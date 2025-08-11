@@ -1,184 +1,229 @@
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Bell, Menu } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useUserCampus } from "@/hooks/useUserCampus";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Trophy, Medal, Award, Crown, Coffee, Users, TrendingUp } from "lucide-react";
+import { useLeaderboard } from "@/hooks/useLeaderboard";
 
-const LeaderboardPage = () => {
-  const [activeTab, setActiveTab] = useState<'reviewers' | 'cafes'>("reviewers");
-  const [leaderboardType, setLeaderboardType] = useState<'friends' | 'global'>("friends");
-  const [items, setItems] = useState<any[]>([]);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const pageSize = 20;
+interface LeaderboardPageProps {
+  onUserClick?: (userId: string) => void;
+}
 
-  const fetchLeaderboard = async () => {
-    setLoading(true);
-    setError(null);
-    const params = new URLSearchParams({
-      type: activeTab,
-      scope: leaderboardType,
-      page: String(page),
-      pageSize: String(pageSize),
-    });
-    if (campus) params.set("campus", campus);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`https://ewzybklijfcablgmkbyw.functions.supabase.co/leaderboard?${params.toString()}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-          },
-        }
-      );
-      const body = await res.json();
-      if (!res.ok) {
-        throw new Error(body?.error || res.statusText);
-      }
-      setItems(body.data || []);
-      setTotal(body.total || 0);
-    } catch (e: any) {
-      setError(e.message || "Failed to load leaderboard");
-    } finally {
-      setLoading(false);
+const LeaderboardPage = ({ onUserClick }: LeaderboardPageProps) => {
+  const { leaderboard, currentUserRank, loading, filters, updateFilters } = useLeaderboard();
+
+  const getRankIcon = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return <Crown className="h-5 w-5 text-yellow-500" />;
+      case 2:
+        return <Medal className="h-5 w-5 text-gray-400" />;
+      case 3:
+        return <Award className="h-5 w-5 text-amber-600" />;
+      default:
+        return <span className="text-sm font-bold text-muted-foreground">#{rank}</span>;
     }
   };
-  const { campus } = useUserCampus();
 
-  // Data fetched from edge function at runtime
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const getRankColor = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return "bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200";
+      case 2:
+        return "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200";
+      case 3:
+        return "bg-gradient-to-r from-amber-50 to-amber-100 border-amber-200";
+      default:
+        return "bg-background border-border";
+    }
+  };
 
-  useEffect(() => {
-    fetchLeaderboard();
-  }, [activeTab, leaderboardType, page, campus]);
+  const getDisplayName = (user: any) => {
+    if (user.first_name && user.last_name) {
+      return `${user.first_name} ${user.last_name}`;
+    } else if (user.first_name) {
+      return user.first_name;
+    } else {
+      return user.username;
+    }
+  };
+
+  const getAvatarInitials = (user: any) => {
+    if (user.first_name && user.last_name) {
+      return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase();
+    } else if (user.first_name) {
+      return user.first_name[0].toUpperCase();
+    } else {
+      return user.username[0].toUpperCase();
+    }
+  };
 
   return (
-    <div className="mobile-container bg-background pb-20 min-h-screen">
-      <div className="mobile-safe-area">
-        {/* Header */}
-        <div className="flex items-center justify-between py-4 px-4">
-          <h1 className="text-xl font-bold">
-            rate<span className="text-primary">ur</span>coffee
-          </h1>
-          <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Menu className="h-5 w-5" />
-            </Button>
+    <div className="flex flex-col h-full bg-background">
+      {/* Header */}
+      <div className="sticky top-0 bg-background/80 backdrop-blur-md border-b p-4 space-y-4">
+        <div className="flex items-center justify-center">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-6 w-6 text-primary" />
+            <h1 className="text-xl font-bold">Leaderboard</h1>
           </div>
         </div>
 
-        <div className="px-4">
-          {/* Page Title */}
-          <h2 className="text-4xl font-bold mb-8">leaderboard</h2>
-
-          {/* Type Toggle */}
-          <div className="flex justify-center mb-6">
-            <div className="flex space-x-2">
-              <Button
-                variant={activeTab === 'reviewers' ? 'default' : 'outline'}
-                onClick={() => { setActiveTab('reviewers'); setPage(1); }}
-                size="sm"
-                className="rounded-full px-6"
-              >
-                Reviewers
-              </Button>
-              <Button
-                variant={activeTab === 'cafes' ? 'default' : 'outline'}
-                onClick={() => { setActiveTab('cafes'); setPage(1); }}
-                size="sm"
-                className="rounded-full px-6"
-              >
-                Cafes
-              </Button>
-            </div>
+        {/* Filters */}
+        <div className="space-y-3">
+          {/* Time Filter */}
+          <div className="flex bg-muted/50 rounded-lg p-1">
+            <Button
+              variant={filters.timeRange === "month" ? "default" : "ghost"}
+              size="sm"
+              className="flex-1 text-sm"
+              onClick={() => updateFilters({ timeRange: "month" })}
+            >
+              This Month
+            </Button>
+            <Button
+              variant={filters.timeRange === "all-time" ? "default" : "ghost"}
+              size="sm"
+              className="flex-1 text-sm"
+              onClick={() => updateFilters({ timeRange: "all-time" })}
+            >
+              All Time
+            </Button>
           </div>
 
-          {/* User Stats Circle */}
-          <div className="flex justify-center mb-8">
-            <div className="relative">
-              <div className="w-32 h-32 border-4 border-gray-300 rounded-full flex flex-col items-center justify-center bg-background">
-                <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center mb-2">
-                  <div className="w-8 h-8 bg-gray-400 rounded-full"></div>
-                </div>
-              </div>
-              <div className="absolute -right-4 top-1/2 -translate-y-1/2">
-                <div className="text-right">
-                  <div className="text-lg font-semibold">Visited:</div>
-                  <div className="text-lg font-semibold">Reviewed:</div>
-                  <div className="text-lg font-semibold">Photos</div>
-                </div>
-              </div>
-              <div className="absolute -right-12 top-1/2 -translate-y-1/2">
-                <div className="text-right">
-                  <div className="text-lg font-bold">5</div>
-                  <div className="text-lg font-bold">4</div>
-                  <div className="text-lg font-bold">3</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Leaderboard Scope Toggle */}
-          <div className="flex justify-center mb-6">
-            <div className="flex space-x-2">
-              <Button
-                variant={leaderboardType === 'friends' ? 'default' : 'outline'}
-                onClick={() => { setLeaderboardType('friends'); setPage(1); }}
-                size="sm"
-                className="rounded-full px-6"
-              >
-                Friends
-              </Button>
-              <Button
-                variant={leaderboardType === 'global' ? 'default' : 'outline'}
-                onClick={() => { setLeaderboardType('global'); setPage(1); }}
-                size="sm"
-                className="rounded-full px-6"
-              >
-                Global
-              </Button>
-            </div>
-          </div>
-
-          {/* Scoring Info */}
-          <div className="mb-4 px-2 text-xs text-muted-foreground">
-            How scoring works: score = reviews_count + 0.5 × photos_count
-          </div>
-
-          {/* Rankings List */}
-          <div className="space-y-2">
-            {loading && <div className="p-3 text-sm text-muted-foreground">Loading…</div>}
-            {error && <div className="p-3 text-sm text-destructive">{error}</div>}
-            {!loading && !error && items.map((row: any) => (
-              <div key={`${activeTab}-${row.rank}-${row.user?.id || row.id}`} className="flex items-center justify-between p-3">
-                <div className="flex items-center space-x-4">
-                  <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                    <span className="text-lg">{row.user?.avatar_url ? '🖼️' : '👤'}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-medium text-lg">{activeTab === 'reviewers' ? `@${row.user?.username || 'user'}` : row.name}</span>
-                    <span className="text-xs text-muted-foreground">#{row.rank} • {activeTab === 'reviewers' ? (row.user?.college || '-') : (Number(row.avg_rating).toFixed(1) + ' ⭐')}</span>
-                  </div>
-                </div>
-                <div className="text-lg font-bold">
-                  {activeTab === 'reviewers' ? row.score : row.reviews_count}
-                </div>
-              </div>
-            ))}
-            {/* Pagination */}
-            <div className="flex items-center justify-between pt-2">
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</Button>
-              <div className="text-sm text-muted-foreground">Page {page}</div>
-              <Button variant="outline" size="sm" disabled={page * pageSize >= total} onClick={() => setPage((p) => p + 1)}>Next</Button>
-            </div>
+          {/* Scope Filter */}
+          <div className="flex bg-muted/50 rounded-lg p-1">
+            <Button
+              variant={filters.scope === "global" ? "default" : "ghost"}
+              size="sm"
+              className="flex-1 text-sm"
+              onClick={() => updateFilters({ scope: "global" })}
+            >
+              <Users className="h-4 w-4 mr-1" />
+              Global
+            </Button>
+            <Button
+              variant={filters.scope === "friends" ? "default" : "ghost"}
+              size="sm"
+              className="flex-1 text-sm"
+              onClick={() => updateFilters({ scope: "friends" })}
+            >
+              <TrendingUp className="h-4 w-4 mr-1" />
+              Friends
+            </Button>
           </div>
         </div>
       </div>
+
+      {/* Leaderboard List */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {loading ? (
+          // Loading skeleton
+          Array.from({ length: 8 }).map((_, i) => (
+            <Card key={i} className="bg-background border-border">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="w-10 h-6" />
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                  <div className="text-right space-y-1">
+                    <Skeleton className="h-4 w-8 ml-auto" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : leaderboard.length === 0 ? (
+          <div className="text-center py-8">
+            <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-muted-foreground mb-2">No rankings yet</h3>
+            <p className="text-sm text-muted-foreground">
+              Be the first to review coffee shops and climb the leaderboard!
+            </p>
+          </div>
+        ) : (
+          leaderboard.map((user) => (
+            <Card 
+              key={user.id} 
+              className={`transition-all hover:scale-[1.02] cursor-pointer ${getRankColor(user.rank)}`}
+              onClick={() => onUserClick?.(user.id)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  {/* Rank */}
+                  <div className="flex items-center justify-center w-10">
+                    {getRankIcon(user.rank)}
+                  </div>
+
+                  {/* Avatar */}
+                  <Avatar className="h-12 w-12">
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                      {getAvatarInitials(user)}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  {/* User Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-sm truncate">{getDisplayName(user)}</h3>
+                      {user.rank <= 3 && (
+                        <span className="text-lg">
+                          {user.rank === 1 ? '👑' : user.rank === 2 ? '🥈' : '🥉'}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">@{user.username}</p>
+                  </div>
+
+                  {/* Visit Count */}
+                  <div className="text-right">
+                    <div className="flex items-center gap-1 text-primary">
+                      <Coffee className="h-4 w-4" />
+                      <span className="font-bold text-sm">{user.unique_cafes_count}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">shops visited</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Current User Rank (Sticky) */}
+      {currentUserRank && (
+        <div className="sticky bottom-0 bg-background/90 backdrop-blur-md border-t p-4">
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center w-10">
+                  <span className="text-sm font-bold text-primary">#{currentUserRank.rank}</span>
+                </div>
+                <Avatar className="h-12 w-12">
+                  <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                    {getAvatarInitials(currentUserRank)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-sm text-primary">You</h3>
+                  <p className="text-xs text-muted-foreground">@{currentUserRank.username}</p>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center gap-1 text-primary">
+                    <Coffee className="h-4 w-4" />
+                    <span className="font-bold text-sm">{currentUserRank.unique_cafes_count}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">shops visited</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

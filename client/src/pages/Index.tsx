@@ -107,7 +107,15 @@ const Index = () => {
                   refreshTrigger={refreshTrigger}
                 />
               )}
-              {currentView === "leaderboard" && <LeaderboardPage />}
+              {currentView === "leaderboard" && (
+                <LeaderboardPage 
+                  onUserClick={(userId) => {
+                    console.log('Navigate to profile:', userId);
+                    // For now, just show current user profile
+                    setCurrentView("profile");
+                  }}
+                />
+              )}
               {currentView === "map" && <MapPage onAddReview={handleAddReview} />}
               {currentView === "search" && (
                 <FeedPage 
@@ -122,8 +130,17 @@ const Index = () => {
               )}
               {currentView === "profile" && (
                 <ProfilePage 
-                  onStatClick={(statType) => {
-                    // Handle stat navigation here if needed
+                  onCafeClick={(cafeId) => {
+                    console.log('Profile cafe clicked:', cafeId);
+                    // Could navigate to cafe detail view
+                  }}
+                  onFollowersClick={() => {
+                    console.log('Show followers');
+                    // Could show followers list
+                  }}
+                  onFollowingClick={() => {
+                    console.log('Show following');
+                    // Could show following list
                   }}
                 />
               )}

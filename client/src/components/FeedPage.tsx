@@ -18,7 +18,7 @@ interface FeedPageProps {
 
 const FeedPage = ({ searchMode = false, onReviewClick, onAddReview, refreshTrigger }: FeedPageProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("nearby");
+  const [activeFilter, setActiveFilter] = useState("all");
   const [likedReviews, setLikedReviews] = useState<Set<string>>(new Set());
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,9 +26,9 @@ const FeedPage = ({ searchMode = false, onReviewClick, onAddReview, refreshTrigg
   const { fetchReviews } = useReviews();
 
   const filters = [
-    { id: "nearby", label: "✈️ Recs Nearby", icon: "✈️" },
-    { id: "trending", label: "📈 Trending", icon: "📈" },
-    { id: "friends", label: "👥 Friend recs", icon: "👥" },
+    { id: "all", label: "🌍 All Reviews", icon: "🌍" },
+    { id: "friends", label: "👥 Friends", icon: "👥" },
+    { id: "campus", label: "🏫 Campus", icon: "🏫" },
   ];
 
   const loadReviews = async () => {

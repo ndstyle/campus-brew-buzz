@@ -1,0 +1,85 @@
+1. Leaderboard Page (MVP) — RateurCoffee
+
+Goal:
+Show user rankings based on coffee/matcha/boba shop visits to drive friendly competition.
+
+Core Sections:
+	1.	Header / Time Filter
+	•	Toggle: This Month (default) and All-Time.
+	•	Optional tabs: Friends vs. Global.
+	2.	Ranking List
+	•	Rows show:
+	•	Position (#1, #2, etc.).
+	•	User avatar.
+	•	Display name.
+	•	Metric count (e.g., “18 unique coffee & boba shops visited”).
+	•	Top 3 ranks get subtle highlights (gold/silver/bronze).
+	3.	Current User Row (Sticky if Offscreen)
+	•	Your current rank and shop visits count.
+	•	Tap to open Profile Page.
+	4.	Navigation
+	•	Bottom nav: Feed, Leaderboard, Profile.
+
+MVP Exclusions:
+	•	No weekly/daily resets or advanced filters (e.g., by shop type or location).
+
+⸻
+
+2. Profile Page (MVP) — RateurCoffee
+
+Goal:
+Display user’s coffee shop activity and social stats.
+
+Core Sections:
+	1.	Header
+	•	Profile picture.
+	•	Display name.
+	•	Stats row:
+	•	Followers count.
+	•	Following count.
+	•	Unique coffee/matcha/boba shops visited.
+	•	Follow/unfollow button (when viewing others).
+	2.	Summary Section
+	•	Auto-generated text like:
+“Visited 30 coffee & boba shops in 8 cities. Loves 🍵 matcha.”
+	3.	Recent Activity
+	•	List of last ~10 check-ins:
+	•	Drink/shop name (e.g., “Taro Boba”) & shop name (e.g., “Boba Bliss”).
+	•	Small logo or placeholder image.
+	•	Date/time of visit.
+	•	Tap → Shop page.
+	4.	Navigation
+	•	Bottom nav bar consistent across pages.
+
+MVP Exclusions:
+	•	No editable bios or custom check-in photos.
+	•	No map or geolocation visualizations.
+
+⸻
+
+3. Feed Page (MVP) — RateurCoffee
+
+Goal:
+Simple social feed showing check-ins from people you follow.
+
+Core Sections:
+	1.	Header
+	•	Title: “Feed”.
+	•	Button/icon to “Find Friends” (e.g., sync contacts).
+	2.	Check-in Feed
+	•	Cards for each check-in:
+	•	“[Name] tried [Drink] at [Coffee/Matcha/Boba Shop]”.
+	•	Shop logo/icon.
+	•	Timestamp (“3d ago”).
+	•	Like button with count.
+	•	Tap anywhere → Shop page.
+	3.	Feed Scope
+	•	Shows check-ins from followed users only.
+	•	If no follows → prompt user to find friends.
+	4.	Navigation
+	•	Bottom nav bar: Feed, Leaderboard, Profile.
+
+MVP Exclusions:
+	•	No comments.
+	•	No image uploads per check-in.
+	•	No content recommendations beyond chronological.
