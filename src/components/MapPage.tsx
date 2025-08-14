@@ -9,7 +9,7 @@ import GoogleMap from "@/components/Map/GoogleMap";
 
 const MapPage = ({ onAddReview }) => {
   const { user } = useAuth();
-  const { cafes, loading, error, fetchCafes, retryFetch, testGooglePlacesAPI, setMapCenter } = useMapData();
+  const { cafes, loading, error, fetchCafes, retryFetch, setMapCenter } = useMapData();
   const { getUniversityCoordinates, loading: universitiesLoading } = useUniversities();
   const { campus, loading: campusLoading } = useUserCampus();
   
@@ -35,13 +35,7 @@ const MapPage = ({ onAddReview }) => {
     }
   }, [mapCenter, campus, fetchCafes, setMapCenter]);
 
-  // Test Google Places API when map center is available
-  useEffect(() => {
-    if (mapCenter) {
-      console.log('🗺️ [MAP PAGE] Testing Google Places API at coordinates:', mapCenter);
-      testGooglePlacesAPI(mapCenter);
-    }
-  }, [mapCenter, testGooglePlacesAPI]);
+  // Google Places API test disabled
 
   const handleAddReview = (cafe) => {
     if (onAddReview) {
