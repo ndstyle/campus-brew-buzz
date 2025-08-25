@@ -5,7 +5,7 @@ import { ReviewModal } from './ReviewModal';
 import { useMapDataGeoapify } from '../hooks/useMapDataGeoapify';
 import { useUserCampus } from '../hooks/useUserCampus';
 import { useUniversities } from '../hooks/useUniversities';
-import { Menu, Trophy, Coffee, Search, Star, User } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 interface Cafe {
   id: string;
@@ -23,7 +23,11 @@ interface Cafe {
   amenities?: string[];
 }
 
-export const MapPage: React.FC = () => {
+interface MapPageProps {
+  onAddReview: (cafe?: Cafe) => void;
+}
+
+export const MapPage: React.FC<MapPageProps> = ({ onAddReview }) => {
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [reviewingCafe, setReviewingCafe] = useState<Cafe | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
@@ -81,9 +85,10 @@ export const MapPage: React.FC = () => {
   }, []);
 
   const handleAddReview = useCallback((cafe: Cafe) => {
+    console.log('🎯 MapPage: Add review clicked for cafe:', cafe.name);
     setSelectedCafe(null);
-    setReviewingCafe(cafe);
-  }, []);
+    onAddReview(cafe);
+  }, [onAddReview]);
 
   const handleSubmitReview = useCallback((review: { rating: number; text: string }) => {
     console.log('Submitting review:', review, 'for cafe:', reviewingCafe?.name);
@@ -100,93 +105,62 @@ export const MapPage: React.FC = () => {
 
   if (isLoading || campusLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600 text-sm">finding cafes near you...</p>
+      <div className="mobile-container bg-background min-h-screen">
+        <div className="mobile-safe-area flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground text-sm">finding cafes near you...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative h-screen bg-gray-50">
-      {/* Debug Info */}
-      <div className="absolute top-4 left-4 z-20 bg-white rounded px-2 py-1 text-xs text-gray-600 shadow">
-        Cafes: {cafes.length} | Loading: {loading ? 'Yes' : 'No'} | Location: {userLocation ? 'Set' : 'None'}
-      </div>
-
-      {/* Mobile-Optimized Map */}
+    <div className="mobile-container bg-background pb-20 min-h-screen">
+      {/* Full-Screen Map */}
       {userLocation ? (
-        <div className="p-4 pb-20">
-          <div className="bg-white rounded-lg overflow-hidden shadow-md border border-gray-200" style={{ height: '400px' }}>
-            <CafeMap
-              cafes={cafes.map(cafe => ({
-                id: cafe.id,
-                name: cafe.name,
-                latitude: cafe.latitude || cafe.lat || 0,
-                longitude: cafe.longitude || cafe.lng || 0,
-                avgrating: cafe.averageRating || cafe.avgrating,
-                ratingcount: cafe.reviewCount || cafe.ratingcount,
-                address: cafe.address || 'address not available',
-                cuisine: cafe.cuisine,
-                priceLevel: cafe.priceLevel,
-                photos: cafe.photos
-              }))}
-              center={userLocation}
-              onCafeClick={handleCafeClick}
-              className="w-full h-full"
-            />
-          </div>
+        <div className="relative h-screen">
+          <CafeMap
+            cafes={cafes.map(cafe => ({
+              id: cafe.id,
+              name: cafe.name,
+              latitude: cafe.latitude || cafe.lat || 0,
+              longitude: cafe.longitude || cafe.lng || 0,
+              avgrating: cafe.averageRating || cafe.avgrating,
+              ratingcount: cafe.reviewCount || cafe.ratingcount,
+              address: cafe.address || 'address not available',
+              cuisine: cafe.cuisine,
+              priceLevel: cafe.priceLevel,
+              photos: cafe.photos
+            }))}
+            center={userLocation}
+            onCafeClick={handleCafeClick}
+            className="w-full h-full"
+          />
         </div>
       ) : (
-        <div className="flex items-center justify-center h-full">
+        <div className="mobile-safe-area flex items-center justify-center h-full">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
-            <p className="text-gray-600">Loading map...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+            <p className="text-muted-foreground">loading map...</p>
           </div>
         </div>
       )}
 
-      {/* Bottom Navigation */}
-      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-30">
-        <div className="flex justify-around items-center">
-          <button className="flex flex-col items-center py-2 px-3">
-            <Trophy size={20} className="text-gray-400 mb-1" />
-            <span className="text-xs text-gray-500">leaderboard</span>
-          </button>
-          <button className="flex flex-col items-center py-2 px-3 text-purple-600">
-            <Coffee size={20} className="text-purple-600 mb-1" />
-            <span className="text-xs font-medium">find coffee</span>
-          </button>
-          <button className="flex flex-col items-center py-2 px-3">
-            <Search size={20} className="text-gray-400 mb-1" />
-            <span className="text-xs text-gray-500">search + review</span>
-          </button>
-          <button className="flex flex-col items-center py-2 px-3">
-            <Star size={20} className="text-gray-400 mb-1" />
-            <span className="text-xs text-gray-500">feed</span>
-          </button>
-          <button className="flex flex-col items-center py-2 px-3">
-            <User size={20} className="text-gray-400 mb-1" />
-            <span className="text-xs text-gray-500">my profile</span>
-          </button>
-        </div>
-      </div>
-
       {/* Error Display */}
       {error && (
-        <div className="absolute top-20 left-4 right-4 z-30 bg-red-50 border border-red-200 rounded-lg p-3">
-          <p className="text-red-700 text-sm">{error}</p>
+        <div className="absolute top-4 left-4 right-4 z-30 bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+          <p className="text-destructive text-sm">{error}</p>
         </div>
       )}
 
       {/* Loading Indicator */}
       {loading && (
-        <div className="absolute top-20 left-4 right-4 z-30 bg-white rounded-lg p-3 shadow-lg">
+        <div className="absolute top-4 left-4 right-4 z-30 bg-background rounded-lg p-3 shadow-lg border">
           <div className="flex items-center">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></div>
-            <span className="text-sm text-gray-600">loading cafes...</span>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+            <span className="text-sm text-muted-foreground">loading cafes...</span>
           </div>
         </div>
       )}
