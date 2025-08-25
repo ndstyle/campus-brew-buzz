@@ -34,11 +34,15 @@ export const MapPage: React.FC = () => {
   const { cafes, loading, error, fetchCafes } = useMapDataGeoapify();
 
   useEffect(() => {
+    let mounted = true;
+    
     const initializeLocation = async () => {
+      if (!mounted) return;
+      
       if (!campusLoading && userCampus) {
         // Use user's college location as default
         const campusCoords = getUniversityCoordinates(userCampus);
-        if (campusCoords) {
+        if (campusCoords && mounted) {
           const coords: [number, number] = [campusCoords.lat, campusCoords.lng];
           setUserLocation(coords);
           fetchCafes(userCampus, { lat: coords[0], lng: coords[1] });
@@ -47,16 +51,18 @@ export const MapPage: React.FC = () => {
         }
       }
 
-      // Fallback to geolocation
-      if (navigator.geolocation) {
+      // Fallback to geolocation only if no campus data
+      if (!userCampus && navigator.geolocation && mounted) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
+            if (!mounted) return;
             const coords: [number, number] = [position.coords.latitude, position.coords.longitude];
             setUserLocation(coords);
-            fetchCafes(userCampus || 'University of California, Los Angeles', { lat: coords[0], lng: coords[1] });
+            fetchCafes('University of California, Los Angeles', { lat: coords[0], lng: coords[1] });
             setIsLoading(false);
           },
           (error) => {
+            if (!mounted) return;
             console.error('Location error:', error);
             // Final fallback to UCLA
             const defaultCoords: [number, number] = [34.0689, -118.4452];
@@ -65,13 +71,24 @@ export const MapPage: React.FC = () => {
             setIsLoading(false);
           }
         );
-      } else {
+      } else if (!userCampus && mounted) {
+        // No geolocation support, use default
+        const defaultCoords: [number, number] = [34.0689, -118.4452];
+        setUserLocation(defaultCoords);
+        fetchCafes('University of California, Los Angeles', { lat: defaultCoords[0], lng: defaultCoords[1] });
         setIsLoading(false);
       }
     };
 
-    initializeLocation();
-  }, [campusLoading, userCampus, getUniversityCoordinates, fetchCafes]);
+    // Only initialize once when campus loading is done
+    if (!campusLoading) {
+      initializeLocation();
+    }
+    
+    return () => {
+      mounted = false;
+    };
+  }, [campusLoading, userCampus]);
 
   const handleCafeClick = useCallback((cafe: Cafe) => {
     console.log('🎯 MapPage: Cafe clicked:', cafe.name);

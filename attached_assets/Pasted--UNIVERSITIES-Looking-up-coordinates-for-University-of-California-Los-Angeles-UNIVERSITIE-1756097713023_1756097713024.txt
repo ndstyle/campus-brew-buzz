@@ -1,0 +1,24 @@
+🎯 [UNIVERSITIES] Looking up coordinates for: "University of California, Los Angeles"
+⚡ [UNIVERSITIES] Static match found for "University of California, Los Angeles": 
+Object {lat: 34.0689, lng: -118.4452, zoom: 15}
+🗺️ [MAP DATA GEOAPIFY] 🚀 Starting comprehensive cafe fetch with Geoapify 
+Object {userCampus: "University of California, Los Angeles", center: {…}}
+🗺️ [MAP DATA GEOAPIFY] 📊 Fetching cafes from Supabase database... 
+🗺️ [MAP DATA GEOAPIFY] 🎯 Filtering by campus: University of California, Los Angeles
+🎯 [UNIVERSITIES] Looking up coordinates for: "University of California, Los Angeles"
+⚡ [UNIVERSITIES] Static match found for "University of California, Los Angeles": 
+Object {lat: 34.0689, lng: -118.4452, zoom: 15}
+Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn&#x27;t have a dependency array, or one of the dependencies changes on every render.
+    at MapPage (https://85a36a19-aa4d-4612-8860-ebf24d982f8e-00-vj2xbzoe5cy3.riker.replit.dev/src/components/MapPage.tsx:28:43)
+    at div
+    at div
+    at Index (https://85a36a19-aa4d-4612-8860-ebf24d982f8e-00-vj2xbzoe5cy3.riker.replit.dev/src/pages/Index.tsx:34:35)
+    at RenderedRoute (https://85a36a19-aa4d-4612-8860-ebf24d982f8e-00-vj2xbzoe5cy3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=3d1c4a50:5643:26)
+    at Routes (https://85a36a19-aa4d-4612-8860-ebf24d982f8e-00-vj2xbzoe5cy3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=3d1c4a50:6379:3)
+    at Router (https://85a36a19-aa4d-4612-8860-ebf24d982f8e-00-vj2xbzoe5cy3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=3d1c4a50:6322:13)
+    at BrowserRouter (https://85a36a19-aa4d-4612-8860-ebf24d982f8e-00-vj2xbzoe5cy3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-router-dom.js?v=3d1c4a50:9403:3)
+    at Provider (https://85a36a19-aa4d-4612-8860-ebf24d982f8e-00-vj2xbzoe5cy3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WURNMSNP.js?v=3d1c4a50:28:15)
+    at TooltipProvider (https://85a36a19-aa4d-4612-8860-ebf24d982f8e-00-vj2xbzoe5cy3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=3d1c4a50:2219:5)
+    at AuthProvider (https://85a36a19-aa4d-4612-8860-ebf24d982f8e-00-vj2xbzoe5cy3.riker.replit.dev/src/contexts/AuthContext.tsx:31:32)
+    at QueryClientProvider (https://85a36a19-aa4d-4612-8860-ebf24d982f8e-00-vj2xbzoe5cy3.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=3d1c4a50:2805:3)
+    at App
