@@ -1,0 +1,62 @@
+COMPREHENSIVE PROMPT FOR REPLIT AGENT:
+
+CRITICAL PRIORITY 1: Fix Marker Click Functionality
+The map markers are not properly opening the cafe detail cards when clicked. Looking at the console logs, cafes are loading successfully (52 total), but marker clicks aren't triggering the modal. Please debug and fix:
+
+In client/src/components/CafeMap.tsx: Verify the marker click event handlers are properly bound and calling onCafeClick
+In client/src/components/MapPage.tsx: Ensure handleCafeClick is correctly setting selectedCafe state
+Check that the CafeDetailCard modal is properly rendered when selectedCafe is not null
+Add console logging to debug the click event flow if needed
+Ensure marker click events aren't being blocked by map interactions or z-index issues
+PRIORITY 2: Update CafeDetailCard Component
+Once marker clicks work, update client/src/components/CafeDetailCard.tsx:
+
+Remove tags section entirely - Delete the div with "casual dinner", "date night", "outdoor seating", "lunch" tags
+
+Add cafe photos carousel:
+
+Insert after cafe name/address, before action buttons
+Horizontal scrollable carousel with 3+ coffee shop exterior/interior photos
+Rectangular photos (not square), mobile-optimized
+Swipeable horizontally with clickable photos for larger view
+Use Unsplash coffee shop URLs like: https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop
+Match existing design patterns
+Update action buttons:
+
+Remove "reserve" button (Calendar icon) completely
+Keep "website" (Globe) and "call" (Phone) buttons
+Add "navigate" button with Navigation icon from lucide-react
+Navigate button opens: https://www.google.com/maps/dir/?api=1&destination=${cafe.latitude},${cafe.longitude}
+Maintain 3-column grid layout
+PRIORITY 3: Fix Map Layout & Remove Header
+Update the map page layout in client/src/components/MapPage.tsx:
+
+Remove the entire header div with "find coffee" title and Menu button
+Map should start immediately below status bar area
+Update map container styling to be mobile-friendly (not full screen)
+Add proper mobile padding/margins consistent with other app pages
+Map should be portrait-oriented, not filling entire screen
+In client/src/components/CafeMap.tsx:
+
+Update map container sizing for mobile layout instead of full screen
+Ensure proper aspect ratio similar to other app pages
+Verify modal positioning works correctly and slides up from bottom
+Ensure modal doesn't cover bottom navigation
+KEEP UNCHANGED:
+
+Header with mini map in detail card
+Close button functionality
+Scores section (rec score and friend score)
+Popular dishes section with food photos
+Modal positioning and animations
+Any other existing functionality
+TESTING REQUIREMENTS:
+
+Verify marker clicks open cafe detail cards
+Test modal slides up properly from bottom
+Confirm photos carousel works and is swipeable
+Test navigate button opens Google Maps with correct coordinates
+Ensure mobile layout works without full-screen map
+Verify bottom navigation remains accessible
+Import any needed icons from lucide-react and maintain consistent mobile-first design patterns throughout.
+

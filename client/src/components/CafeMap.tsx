@@ -60,7 +60,6 @@ export const CafeMap: React.FC<CafeMapProps> = ({ cafes, center, onCafeClick, cl
         boxZoom: false,
         keyboard: false,
         dragging: true,
-        tap: true,
         tapTolerance: 15
       }).setView(center, 15);
 
@@ -87,6 +86,7 @@ export const CafeMap: React.FC<CafeMapProps> = ({ cafes, center, onCafeClick, cl
         });
         
         marker.on('click', (e) => {
+          console.log('🚀 Marker clicked:', cafe.name);
           e.originalEvent?.stopPropagation();
           handleCafeClick(cafe);
         });
@@ -124,7 +124,7 @@ export const CafeMap: React.FC<CafeMapProps> = ({ cafes, center, onCafeClick, cl
     <div 
       ref={mapContainerRef} 
       className={`${className} relative`}
-      style={{ minHeight: '100vh', width: '100%' }}
+      style={{ width: '100%', height: '100%' }}
     />
   );
 };

@@ -1,0 +1,52 @@
+OBJECTIVE: Fix the Find Coffee map page to match the exact design shown in the attached screenshots with proper mobile layout and marker interaction.
+
+CRITICAL ISSUES TO FIX:
+
+Map Layout & Sizing:
+
+Remove full-screen map styling
+Make map container mobile-first with proper aspect ratio (similar to other pages like feed)
+Map should be vertical/portrait oriented, not filling entire screen
+Add proper mobile padding and margins consistent with other app pages
+Remove Unnecessary Header:
+
+Completely remove the top header section ("find coffee" + menu button)
+Map should start immediately below the status bar area
+Fix Marker Click Functionality:
+
+Currently markers don't trigger any action when clicked
+Clicking a marker MUST open the CafeDetailCard modal (shown in screenshots)
+The card should slide up from bottom with cafe information, tags, scores, photos
+Ensure the modal has proper mobile positioning and doesn't cover bottom navigation
+SPECIFIC IMPLEMENTATION REQUIREMENTS:
+
+File: client/src/components/MapPage.tsx
+
+Remove the header div entirely (lines with "find coffee" title and Menu button)
+Update map container styling to be mobile-friendly
+Ensure marker clicks properly trigger handleCafeClick which opens the CafeDetailCard
+Fix any z-index or positioning issues preventing marker interaction
+File: client/src/components/CafeMap.tsx
+
+Verify marker click events are properly attached and not being blocked
+Ensure markers are interactive and visible
+Update map container sizing to work in mobile layout (not full screen)
+File: client/src/components/CafeDetailCard.tsx
+
+Verify modal positioning works correctly when triggered from map markers
+Ensure it slides up from bottom like in the screenshots
+Make sure it doesn't cover the bottom navigation
+DESIGN REFERENCE:
+The attached screenshots show:
+
+A mobile-sized map view with multiple black markers
+When marker is clicked, a detailed card slides up showing cafe info, tags, scores, and photos
+No header above the map - it starts right at the top
+Clean mobile-first layout with bottom navigation always visible
+TESTING CRITERIA:
+
+Map displays in mobile format (not full screen)
+No header above map
+Clicking any marker opens the cafe detail card
+Card shows cafe information and doesn't cover bottom nav
+Layout matches the provided screenshots exactly

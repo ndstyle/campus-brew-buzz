@@ -74,7 +74,8 @@ export const MapPage: React.FC = () => {
   }, [campusLoading, userCampus, getUniversityCoordinates, fetchCafes]);
 
   const handleCafeClick = useCallback((cafe: Cafe) => {
-    console.log('Cafe clicked:', cafe.name);
+    console.log('🎯 MapPage: Cafe clicked:', cafe.name);
+    console.log('🎯 MapPage: Setting selectedCafe to:', cafe);
     setSelectedCafe(cafe);
   }, []);
 
@@ -109,36 +110,29 @@ export const MapPage: React.FC = () => {
 
   return (
     <div className="relative h-screen bg-white overflow-hidden">
-      {/* Top Header */}
-      <div className="absolute top-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-sm">
-        <div className="flex items-center justify-between p-4">
-          <h1 className="text-base font-normal text-gray-700">find coffee</h1>
-          <button className="p-2 hover:bg-gray-100 rounded-full">
-            <Menu size={20} className="text-gray-600" />
-          </button>
-        </div>
-      </div>
 
-      {/* Full Screen Map */}
+      {/* Mobile-Optimized Map */}
       {userLocation && (
-        <div className="absolute inset-0 pt-16 pb-20">
-          <CafeMap
-            cafes={cafes.map(cafe => ({
-              id: cafe.id,
-              name: cafe.name,
-              latitude: cafe.latitude || cafe.lat || 0,
-              longitude: cafe.longitude || cafe.lng || 0,
-              avgrating: cafe.averageRating || cafe.avgrating,
-              ratingcount: cafe.reviewCount || cafe.ratingcount,
-              address: cafe.address || 'address not available',
-              cuisine: cafe.cuisine,
-              priceLevel: cafe.priceLevel,
-              photos: cafe.photos
-            }))}
-            center={userLocation}
-            onCafeClick={handleCafeClick}
-            className="w-full h-full"
-          />
+        <div className="px-4 pt-4 pb-20">
+          <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
+            <CafeMap
+              cafes={cafes.map(cafe => ({
+                id: cafe.id,
+                name: cafe.name,
+                latitude: cafe.latitude || cafe.lat || 0,
+                longitude: cafe.longitude || cafe.lng || 0,
+                avgrating: cafe.averageRating || cafe.avgrating,
+                ratingcount: cafe.reviewCount || cafe.ratingcount,
+                address: cafe.address || 'address not available',
+                cuisine: cafe.cuisine,
+                priceLevel: cafe.priceLevel,
+                photos: cafe.photos
+              }))}
+              center={userLocation}
+              onCafeClick={handleCafeClick}
+              className="w-full h-96"
+            />
+          </div>
         </div>
       )}
 

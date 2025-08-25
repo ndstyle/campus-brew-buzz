@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Globe, Phone, Calendar, ChevronRight } from 'lucide-react';
+import { X, Globe, Phone, Navigation, ChevronRight } from 'lucide-react';
 
 interface Cafe {
   id: string;
@@ -54,13 +54,6 @@ export const CafeDetailCard: React.FC<CafeDetailCardProps> = ({ cafe, onClose, o
 
         {/* Content */}
         <div className="p-4 space-y-4 max-h-[calc(85vh-8rem)] overflow-y-auto">
-          {/* Tags */}
-          <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700">casual dinner</span>
-            <span className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700">date night</span>
-            <span className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700">outdoor seating</span>
-            <span className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700">lunch</span>
-          </div>
 
           {/* Name and details */}
           <div>
@@ -69,6 +62,20 @@ export const CafeDetailCard: React.FC<CafeDetailCardProps> = ({ cafe, onClose, o
               {priceString} | {cafe.cuisine || 'italian, pizza'}
             </div>
             <div className="text-sm text-gray-500">{cafe.address}</div>
+          </div>
+
+          {/* Photos Carousel */}
+          <div className="py-2">
+            <div className="flex space-x-3 overflow-x-auto">
+              {mockPhotos.map((photo, i) => (
+                <img 
+                  key={i} 
+                  src={photo} 
+                  alt={`${cafe.name} photo ${i + 1}`} 
+                  className="w-32 h-20 rounded-lg object-cover flex-shrink-0" 
+                />
+              ))}
+            </div>
           </div>
 
           {/* Action buttons */}
@@ -81,9 +88,12 @@ export const CafeDetailCard: React.FC<CafeDetailCardProps> = ({ cafe, onClose, o
               <Phone size={20} className="text-gray-600 mb-1" />
               <span className="text-xs text-gray-600">call</span>
             </button>
-            <button className="flex flex-col items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
-              <Calendar size={20} className="text-gray-600 mb-1" />
-              <span className="text-xs text-gray-600">reserve</span>
+            <button 
+              onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${cafe.latitude},${cafe.longitude}`, '_blank')}
+              className="flex flex-col items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50"
+            >
+              <Navigation size={20} className="text-gray-600 mb-1" />
+              <span className="text-xs text-gray-600">navigate</span>
             </button>
           </div>
 
