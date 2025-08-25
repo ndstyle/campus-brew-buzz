@@ -5,6 +5,46 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom marker styling */
+.custom-cafe-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Card animations */
+.modal-enter {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+.modal-enter-active {
+  transform: translateY(0);
+  opacity: 1;
+  transition: all 0.3s ease-out;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+}
+
+/* Map container */
+.leaflet-container {
+  font-family: inherit !important;
+}
+
+/* Hide leaflet attribution on mobile */
+@media (max-width: 640px) {
+  .leaflet-control-attribution {
+    display: none !important;
+  }
+}
+
 /* Beli-inspired cafe info card animations */
 @layer utilities {
   .animate-slide-in-bottom {

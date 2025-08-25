@@ -2,24 +2,37 @@ import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix Leaflet default marker icons (required for Replit/Webpack)
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+// Custom Beli-style marker
+const createCafeMarker = (rating?: number) => {
+  const color = rating && rating >= 8 ? '#22c55e' : rating && rating >= 6 ? '#f59e0b' : '#6b7280';
+  const ratingText = rating ? rating.toFixed(1) : 'NEW';
+  
+  return L.divIcon({
+    html: `
+      <div class="relative">
+        <div class="w-10 h-10 bg-white rounded-full shadow-lg border-2 ${color === '#22c55e' ? 'border-green-500' : color === '#f59e0b' ? 'border-yellow-500' : 'border-gray-500'} flex items-center justify-center">
+          <span class="text-xs font-bold text-gray-800">${ratingText}</span>
+        </div>
+        <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent ${color === '#22c55e' ? 'border-t-green-500' : color === '#f59e0b' ? 'border-t-yellow-500' : 'border-t-gray-500'}"></div>
+      </div>
+    `,
+    className: 'custom-cafe-marker',
+    iconSize: [40, 45],
+    iconAnchor: [20, 45]
+  });
+};
 
 interface Cafe {
   id: string;
   name: string;
   latitude: number;
   longitude: number;
-  averageRating?: number;
-  reviewCount?: number;
+  avgrating?: number;
+  ratingcount?: number;
   address: string;
-  campus?: string;
-  hasUserReview?: boolean;
+  cuisine?: string;
+  priceLevel?: number;
+  photos?: string[];
 }
 
 interface CafeMapProps {
@@ -27,90 +40,56 @@ interface CafeMapProps {
   center: [number, number];
   onCafeClick: (cafe: Cafe) => void;
   className?: string;
-  zoom?: number;
 }
 
-export const CafeMap: React.FC<CafeMapProps> = ({ 
-  cafes, 
-  center, 
-  onCafeClick, 
-  className = "w-full h-96",
-  zoom = 14 
-}) => {
+export const CafeMap: React.FC<CafeMapProps> = ({ cafes, center, onCafeClick, className = "w-full h-full" }) => {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // Initialize map
     const map = L.map(mapContainerRef.current, {
-      zoomControl: true,
+      zoomControl: false, // Remove default zoom controls
       scrollWheelZoom: true,
       touchZoom: true,
-    }).setView(center, zoom);
+    }).setView(center, 15);
 
     mapRef.current = map;
 
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    // Use lighter map tiles for better contrast
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap, © CartoDB',
       maxZoom: 19,
-      tileSize: 256,
-      zoomOffset: 0,
     }).addTo(map);
 
-    // Add cafe markers
-    cafes.forEach((cafe) => {
-      const ratingDisplay = cafe.averageRating 
-        ? `${cafe.averageRating.toFixed(1)}/10 (${cafe.reviewCount || 0} reviews)`
-        : 'No reviews yet';
+    // Add custom zoom control in top-right
+    L.control.zoom({ position: 'topright' }).addTo(map);
 
-      const marker = L.marker([cafe.latitude, cafe.longitude])
-        .bindPopup(`
-          <div class="p-3 min-w-48 max-w-64">
-            <h3 class="font-bold text-purple-800 text-base mb-1">${cafe.name}</h3>
-            <p class="text-sm text-gray-600 mb-2">${cafe.address}</p>
-            <div class="flex items-center justify-between">
-              <span class="text-sm font-medium text-purple-600">${ratingDisplay}</span>
-              <button class="text-xs bg-purple-600 text-white px-2 py-1 rounded hover:bg-purple-700">
-                View Details
-              </button>
-            </div>
-          </div>
-        `, {
-          maxWidth: 280,
-          className: 'custom-popup'
-        })
-        .on('click', () => onCafeClick(cafe));
+    // Add cafe markers with Beli styling
+    cafes.forEach((cafe) => {
+      const marker = L.marker([cafe.latitude, cafe.longitude], {
+        icon: createCafeMarker(cafe.avgrating)
+      });
       
+      // Remove popup, handle click directly
+      marker.on('click', () => onCafeClick(cafe));
       marker.addTo(map);
     });
 
-    // Add user location marker if provided
-    if (center) {
-      L.circleMarker(center, {
-        color: '#8B5FBF',
-        fillColor: '#8B5FBF',
-        fillOpacity: 0.3,
-        radius: 8,
-      }).bindPopup('Your Location').addTo(map);
-    }
-
-    // Cleanup function
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
       }
     };
-  }, [cafes, center, onCafeClick, zoom]);
+  }, [cafes, center, onCafeClick]);
 
   return (
     <div 
       ref={mapContainerRef} 
-      className={`${className} rounded-lg border border-gray-200 z-0`}
-      style={{ minHeight: '350px' }}
+      className={`${className} relative`}
+      style={{ minHeight: '100vh' }}
     />
   );
 };
