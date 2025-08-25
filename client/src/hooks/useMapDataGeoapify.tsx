@@ -235,7 +235,7 @@ export const useMapDataGeoapify = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchCafes, user, mapCenter]);
+  }, [user]); // Reduce dependencies to prevent loops
 
   const retryFetch = useCallback(() => {
     const userCampus = user?.user_metadata?.college;

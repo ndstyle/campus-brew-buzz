@@ -83,13 +83,13 @@ export const CafeDiscovery: React.FC = () => {
     }
   }, [userCampus, campusLoading, getUniversityCoordinates, setMapCenter]);
 
-  // Fetch cafes when we have location
+  // Fetch cafes when we have location - only once
   useEffect(() => {
-    if (userLocation && !loading) {
+    if (userLocation && !loading && cafes.length === 0) {
       const center = { lat: userLocation[0], lng: userLocation[1] };
       fetchCafes(userCampus, center);
     }
-  }, [userLocation, userCampus, fetchCafes]);
+  }, [userLocation, userCampus]); // Remove fetchCafes dependency to prevent loops
 
   const handleCafeClick = (cafe: Cafe) => {
     console.log('🏪 Cafe clicked:', cafe.name);

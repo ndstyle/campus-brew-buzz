@@ -1,4 +1,11 @@
-const API_KEY = import.meta.env.VITE_GEOAPIFY_API_KEY || import.meta.env.REACT_APP_GEOAPIFY_API_KEY;
+// Get API key from environment variables - ensure proper access
+const getApiKey = () => {
+  return import.meta.env.REACT_APP_GEOAPIFY_API_KEY || 
+         import.meta.env.VITE_GEOAPIFY_API_KEY || 
+         '6c8299f6962b421f95e5db9fed666e7c'; // Fallback for development
+};
+
+const API_KEY = getApiKey();
 
 export interface GeoapifyPlace {
   place_id: string;
@@ -30,14 +37,15 @@ export class GeoapifyService {
   private baseUrl = 'https://api.geoapify.com/v2';
 
   async searchCafesNearCampus(lat: number, lng: number, radius: number = 3000): Promise<GeoapifyPlace[]> {
-    if (!API_KEY) {
+    const currentApiKey = getApiKey();
+    if (!currentApiKey) {
       console.error('❌ Geoapify API key missing from environment');
       return [];
     }
 
     try {
       const response = await fetch(
-        `${this.baseUrl}/places?categories=catering.cafe,catering.restaurant&filter=circle:${lng},${lat},${radius}&limit=50&apiKey=${API_KEY}`
+        `${this.baseUrl}/places?categories=catering.cafe,catering.restaurant&filter=circle:${lng},${lat},${radius}&limit=50&apiKey=${currentApiKey}`
       );
       
       if (!response.ok) {
@@ -54,12 +62,13 @@ export class GeoapifyService {
   }
 
   async searchCafesByName(query: string, lat?: number, lng?: number): Promise<GeoapifyPlace[]> {
-    if (!API_KEY) return [];
+    const currentApiKey = getApiKey();
+    if (!currentApiKey) return [];
 
     try {
       const biasParam = lat && lng ? `&bias=proximity:${lng},${lat}` : '';
       const response = await fetch(
-        `${this.baseUrl}/places?categories=catering.cafe,catering.restaurant&text=${encodeURIComponent(query)}${biasParam}&limit=20&apiKey=${API_KEY}`
+        `${this.baseUrl}/places?categories=catering.cafe,catering.restaurant&text=${encodeURIComponent(query)}${biasParam}&limit=20&apiKey=${currentApiKey}`
       );
       
       const data = await response.json();
@@ -71,11 +80,12 @@ export class GeoapifyService {
   }
 
   async geocodeAddress(address: string): Promise<{lat: number, lng: number} | null> {
-    if (!API_KEY) return null;
+    const currentApiKey = getApiKey();
+    if (!currentApiKey) return null;
 
     try {
       const response = await fetch(
-        `${this.baseUrl}/geocode/search?text=${encodeURIComponent(address)}&limit=1&apiKey=${API_KEY}`
+        `${this.baseUrl}/geocode/search?text=${encodeURIComponent(address)}&limit=1&apiKey=${currentApiKey}`
       );
       
       const data = await response.json();
