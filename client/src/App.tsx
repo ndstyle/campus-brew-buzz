@@ -11,6 +11,7 @@ import Preview from "./pages/Preview";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import UserProfile from "./pages/UserProfile";
+import { CafeDiscovery } from "./pages/CafeDiscovery";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/editor" element={<Editor />} />
             <Route path="/preview" element={<Preview />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/discovery" element={<CafeDiscovery />} />
             <Route path="/u/:id" element={<UserProfile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

@@ -2,19 +2,23 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Bell, Menu, AlertCircle, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMapData } from "@/hooks/useMapData";
+import { useMapDataGeoapify } from "@/hooks/useMapDataGeoapify";
 import { useUniversities } from '@/hooks/useUniversities';
 import { useUserCampus } from '@/hooks/useUserCampus';
-import GoogleMap from "@/components/Map/GoogleMap";
+import { CafeMap } from "@/components/CafeMap";
 
-const MapPage = ({ onAddReview }) => {
+interface MapPageProps {
+  onAddReview?: (cafe: any) => void;
+}
+
+const MapPage = ({ onAddReview }: MapPageProps) => {
   const { user } = useAuth();
-  const { cafes, loading, error, fetchCafes, retryFetch, testGooglePlacesAPI, setMapCenter } = useMapData();
+  const { cafes, loading, error, fetchCafes, retryFetch, testGeoapifyAPI, setMapCenter } = useMapDataGeoapify();
   const { getUniversityCoordinates, loading: universitiesLoading } = useUniversities();
   const { campus, loading: campusLoading } = useUserCampus();
   
   // Get initial map center based on user's college from database
-  const [mapCenter, setLocalMapCenter] = useState(null);
+  const [mapCenter, setLocalMapCenter] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
 
   // Combined effect to prevent cascade re-renders - only run once when campus data is ready
   useEffect(() => {
@@ -30,12 +34,12 @@ const MapPage = ({ onAddReview }) => {
         // Fetch cafes and test API once
         console.log('🗺️ [MAP PAGE] Fetching cafes for campus:', campus);
         fetchCafes(campus, coordinates);
-        testGooglePlacesAPI(coordinates);
+        testGeoapifyAPI(coordinates);
       }
     }
   }, [campus, campusLoading, universitiesLoading, mapCenter]); // Remove function dependencies to prevent loops
 
-  const handleAddReview = (cafe) => {
+  const handleAddReview = (cafe: any) => {
     console.log('🗺️ [MAP PAGE] Handling add review for cafe:', cafe);
     if (onAddReview) {
       onAddReview(cafe);
@@ -64,12 +68,22 @@ const MapPage = ({ onAddReview }) => {
       {/* Map Container */}
       <div className="w-full h-screen pt-16">
         {mapCenter ? (
-          <GoogleMap
-            center={mapCenter}
-            zoom={mapCenter.zoom}
-            cafes={cafes}
-            onAddReview={handleAddReview}
-            loading={loading}
+          <CafeMap
+            center={[mapCenter.lat, mapCenter.lng]}
+            zoom={mapCenter.zoom || 15}
+            cafes={cafes.map(cafe => ({
+              id: cafe.id,
+              name: cafe.name,
+              latitude: cafe.lat || 0,
+              longitude: cafe.lng || 0,
+              averageRating: cafe.averageRating,
+              reviewCount: cafe.reviewCount,
+              address: cafe.address || 'Address not available',
+              campus: cafe.campus,
+              hasUserReview: cafe.hasUserReview,
+            }))}
+            onCafeClick={handleAddReview}
+            className="w-full h-full"
           />
         ) : (
           <div className="w-full h-full bg-muted/30 flex items-center justify-center">
