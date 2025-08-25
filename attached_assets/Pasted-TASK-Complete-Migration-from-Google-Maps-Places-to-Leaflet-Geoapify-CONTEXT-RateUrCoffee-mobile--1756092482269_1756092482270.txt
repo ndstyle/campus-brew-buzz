@@ -1,0 +1,663 @@
+TASK: Complete Migration from Google Maps/Places to Leaflet + Geoapify
+CONTEXT: RateUrCoffee mobile-first web app using React 18 + TypeScript, Supabase backend, currently integrated with Google Places API using placeid identifiers. API key CONFIRMED WORKING - returned 5 NYC cafes successfully.
+API KEY STATUS: ✅ 6c8299f6962b421f95e5db9fed666e7c active in Replit Secrets as REACT_APP_GEOAPIFY_API_KEY
+IMMEDIATE IMPLEMENTATION - EXECUTE NOW:
+Step 1: Update Dependencies
+bash
+# Install Leaflet ecosystem
+npm install leaflet @types/leaflet react-leaflet
+
+# Remove Google dependencies (if present)
+npm uninstall @googlemaps/js-api-loader @googlemaps/react-wrapper google-maps-react
+
+# Verify installation
+npm list leaflet
+
+Step 2: Add Leaflet CSS Import
+In src/index.css - ADD AS FIRST LINE:
+css
+@import 'leaflet/dist/leaflet.css';
+
+/* Your existing Tailwind and custom styles below */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+Step 3: Create Geoapify Service
+Create file: src/services/geoapifyService.ts
+typescript
+const API_KEY = process.env.REACT_APP_GEOAPIFY_API_KEY;
+
+export interface GeoapifyPlace {
+  place_id: string;
+  properties: {
+    name: string;
+    formatted: string;
+    lat: number;
+    lon: number;
+    categories: string[];
+    contact?: {
+      phone?: string;
+      email?: string;
+    };
+    facilities?: {
+      internet_access?: boolean;
+      wheelchair?: boolean;
+      outdoor_seating?: boolean;
+    };
+    opening_hours?: string;
+    website?: string;
+    datasource?: {
+      sourcename: string;
+      raw?: { osm_id?: number; };
+    };
+  };
+}
+
+export class GeoapifyService {
+  private baseUrl = 'https://api.geoapify.com/v2';
+
+  async searchCafesNearCampus(lat: number, lng: number, radius: number = 3000): Promise<GeoapifyPlace[]> {
+    if (!API_KEY) {
+      console.error('❌ Geoapify API key missing from environment');
+      return [];
+    }
+
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/places?categories=catering.cafe,catering.restaurant&filter=circle:${lng},${lat},${radius}&limit=50&apiKey=${API_KEY}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Geoapify API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Geoapify returned', data.features?.length || 0, 'cafes');
+      return data.features || [];
+    } catch (error) {
+      console.error('❌ Error fetching cafes from Geoapify:', error);
+      return [];
+    }
+  }
+
+  async searchCafesByName(query: string, lat?: number, lng?: number): Promise<GeoapifyPlace[]> {
+    if (!API_KEY) return [];
+
+    try {
+      const biasParam = lat && lng ? `&bias=proximity:${lng},${lat}` : '';
+      const response = await fetch(
+        `${this.baseUrl}/places?categories=catering.cafe,catering.restaurant&text=${encodeURIComponent(query)}${biasParam}&limit=20&apiKey=${API_KEY}`
+      );
+      
+      const data = await response.json();
+      return data.features || [];
+    } catch (error) {
+      console.error('❌ Text search error:', error);
+      return [];
+    }
+  }
+
+  async geocodeAddress(address: string): Promise<{lat: number, lng: number} | null> {
+    if (!API_KEY) return null;
+
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/geocode/search?text=${encodeURIComponent(address)}&limit=1&apiKey=${API_KEY}`
+      );
+      
+      const data = await response.json();
+      if (data.features?.[0]) {
+        const [lng, lat] = data.features[0].geometry.coordinates;
+        return { lat, lng };
+      }
+      return null;
+    } catch (error) {
+      console.error('❌ Geocoding error:', error);
+      return null;
+    }
+  }
+}
+
+export const geoapifyService = new GeoapifyService();
+
+Step 4: Create Leaflet Map Component
+Create file: src/components/CafeMap.tsx
+typescript
+import React, { useEffect, useRef } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix Leaflet default marker icons (required for Replit/Webpack)
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+interface Cafe {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  avgrating?: number;
+  ratingcount?: number;
+  address: string;
+  campus?: string;
+}
+
+interface CafeMapProps {
+  cafes: Cafe[];
+  center: [number, number];
+  onCafeClick: (cafe: Cafe) => void;
+  className?: string;
+  zoom?: number;
+}
+
+export const CafeMap: React.FC<CafeMapProps> = ({ 
+  cafes, 
+  center, 
+  onCafeClick, 
+  className = "w-full h-96",
+  zoom = 14 
+}) => {
+  const mapRef = useRef<L.Map | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    // Initialize map
+    const map = L.map(mapContainerRef.current, {
+      zoomControl: true,
+      scrollWheelZoom: true,
+      touchZoom: true,
+    }).setView(center, zoom);
+
+    mapRef.current = map;
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19,
+      tileSize: 256,
+      zoomOffset: 0,
+    }).addTo(map);
+
+    // Add cafe markers
+    cafes.forEach((cafe) => {
+      const ratingDisplay = cafe.avgrating 
+        ? `${cafe.avgrating.toFixed(1)}/10 (${cafe.ratingcount || 0} reviews)`
+        : 'No reviews yet';
+
+      const marker = L.marker([cafe.latitude, cafe.longitude])
+        .bindPopup(`
+          <div class="p-3 min-w-48 max-w-64">
+            <h3 class="font-bold text-purple-800 text-base mb-1">${cafe.name}</h3>
+            <p class="text-sm text-gray-600 mb-2">${cafe.address}</p>
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-medium text-purple-600">${ratingDisplay}</span>
+              <button class="text-xs bg-purple-600 text-white px-2 py-1 rounded hover:bg-purple-700">
+                View Details
+              </button>
+            </div>
+          </div>
+        `, {
+          maxWidth: 280,
+          className: 'custom-popup'
+        })
+        .on('click', () => onCafeClick(cafe));
+      
+      marker.addTo(map);
+    });
+
+    // Add user location marker if provided
+    if (center) {
+      L.circleMarker(center, {
+        color: '#8B5FBF',
+        fillColor: '#8B5FBF',
+        fillOpacity: 0.3,
+        radius: 8,
+      }).bindPopup('Your Location').addTo(map);
+    }
+
+    // Cleanup function
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [cafes, center, onCafeClick, zoom]);
+
+  return (
+    <div 
+      ref={mapContainerRef} 
+      className={`${className} rounded-lg border border-gray-200 z-0`}
+      style={{ minHeight: '350px' }}
+    />
+  );
+};
+
+Step 5: Update Database Schema
+Execute in your Supabase SQL Editor:
+sql
+-- Add new location columns to cafes table
+ALTER TABLE cafes 
+ADD COLUMN IF NOT EXISTS geoapify_place_id VARCHAR(255),
+ADD COLUMN IF NOT EXISTS osm_id BIGINT,
+ADD COLUMN IF NOT EXISTS latitude DECIMAL(10, 8),
+ADD COLUMN IF NOT EXISTS longitude DECIMAL(11, 8);
+
+-- Create spatial index for location queries
+CREATE INDEX IF NOT EXISTS idx_cafes_location ON cafes (latitude, longitude);
+
+-- Create index on geoapify_place_id for lookups
+CREATE INDEX IF NOT EXISTS idx_cafes_geoapify_id ON cafes (geoapify_place_id);
+
+-- Add constraint to ensure coordinates are both present or both null
+ALTER TABLE cafes ADD CONSTRAINT check_coordinates 
+CHECK ((latitude IS NULL AND longitude IS NULL) OR (latitude IS NOT NULL AND longitude IS NOT NULL));
+
+Step 6: Create Cafe Discovery Component
+Update or create your cafe discovery page component:
+typescript
+import React, { useState, useEffect } from 'react';
+import { CafeMap } from '../components/CafeMap';
+import { geoapifyService, type GeoapifyPlace } from '../services/geoapifyService';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase (adjust with your actual config)
+const supabase = createClient(
+  process.env.REACT_APP_SUPABASE_URL!,
+  process.env.REACT_APP_SUPABASE_ANON_KEY!
+);
+
+interface Cafe {
+  id: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  avgrating?: number;
+  ratingcount?: number;
+  campus: string;
+  geoapify_place_id?: string;
+  placeid?: string; // Keep for backward compatibility
+}
+
+export const CafeDiscovery: React.FC = () => {
+  const [cafes, setCafes] = useState<Cafe[]>([]);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    initializeLocation();
+  }, []);
+
+  const initializeLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coords: [number, number] = [position.coords.latitude, position.coords.longitude];
+          setUserLocation(coords);
+          loadCafes(coords[0], coords[1]);
+        },
+        (error) => {
+          console.error('❌ Geolocation error:', error);
+          // Default to NYC area (adjust for your target campus)
+          const defaultCoords: [number, number] = [40.7357, -73.9927]; // Columbia University
+          setUserLocation(defaultCoords);
+          loadCafes(defaultCoords[0], defaultCoords[1]);
+        },
+        { timeout: 10000, enableHighAccuracy: true }
+      );
+    } else {
+      console.warn('⚠️ Geolocation not supported');
+      const defaultCoords: [number, number] = [40.7357, -73.9927];
+      setUserLocation(defaultCoords);
+      loadCafes(defaultCoords[0], defaultCoords[1]);
+    }
+  };
+
+  const loadCafes = async (lat: number, lng: number) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // 1. Fetch existing cafes from your database
+      const dbCafes = await fetchExistingCafes();
+      
+      // 2. Fetch new cafes from Geoapify
+      const geoapifyCafes = await geoapifyService.searchCafesNearCampus(lat, lng);
+      
+      // 3. Convert Geoapify results to your cafe format
+      const convertedCafes: Cafe[] = geoapifyCafes.map((place: GeoapifyPlace) => ({
+        id: place.place_id,
+        name: place.properties.name,
+        address: place.properties.formatted,
+        latitude: place.properties.lat,
+        longitude: place.properties.lon,
+        avgrating: 0, // New cafes start with no rating
+        ratingcount: 0,
+        campus: determineCampus(place.properties.lat, place.properties.lon), // Implement campus detection
+        geoapify_place_id: place.place_id,
+      }));
+
+      // 4. Merge and deduplicate results
+      const allCafes = mergeAndDeduplicateCafes(dbCafes, convertedCafes);
+      
+      setCafes(allCafes);
+      console.log('✅ Loaded', allCafes.length, 'cafes total');
+      
+    } catch (error) {
+      console.error('❌ Error loading cafes:', error);
+      setError('Failed to load cafes. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchExistingCafes = async (): Promise<Cafe[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('cafes')
+        .select('*')
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null);
+      
+      if (error) {
+        console.error('❌ Database error:', error);
+        return [];
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error('❌ Error fetching from database:', error);
+      return [];
+    }
+  };
+
+  const mergeAndDeduplicateCafes = (dbCafes: Cafe[], apiCafes: Cafe[]): Cafe[] => {
+    // Combine cafes and remove duplicates based on name + proximity
+    const combined = [...dbCafes];
+    
+    apiCafes.forEach(apiCafe => {
+      const isDuplicate = combined.some(dbCafe => 
+        dbCafe.name.toLowerCase() === apiCafe.name.toLowerCase() &&
+        Math.abs(dbCafe.latitude - apiCafe.latitude) < 0.001 &&
+        Math.abs(dbCafe.longitude - apiCafe.longitude) < 0.001
+      );
+      
+      if (!isDuplicate) {
+        combined.push(apiCafe);
+      }
+    });
+    
+    return combined;
+  };
+
+  const determineCampus = (lat: number, lng: number): string => {
+    // Implement your campus detection logic
+    // For now, return a default campus
+    return 'Unknown Campus';
+  };
+
+  const handleCafeClick = (cafe: Cafe) => {
+    console.log('🏪 Cafe clicked:', cafe.name);
+    // Navigate to cafe details page or open review modal
+    // Example: navigate(`/cafe/${cafe.id}`);
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim() || !userLocation) return;
+    
+    setLoading(true);
+    try {
+      const searchResults = await geoapifyService.searchCafesByName(
+        searchQuery, 
+        userLocation[0], 
+        userLocation[1]
+      );
+      
+      const convertedResults: Cafe[] = searchResults.map((place: GeoapifyPlace) => ({
+        id: place.place_id,
+        name: place.properties.name,
+        address: place.properties.formatted,
+        latitude: place.properties.lat,
+        longitude: place.properties.lon,
+        avgrating: 0,
+        ratingcount: 0,
+        campus: 'Search Result',
+        geoapify_place_id: place.place_id,
+      }));
+      
+      setCafes(convertedResults);
+    } catch (error) {
+      setError('Search failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading && !userLocation) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Getting your location...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 p-4">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold text-gray-900">Discover Cafes</h2>
+        <span className="text-sm text-gray-500">{cafes.length} cafes found</span>
+      </div>
+
+      {/* Search Bar */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search for cafes..."
+          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+          onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+        />
+        <button
+          onClick={handleSearch}
+          disabled={!searchQuery.trim()}
+          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Search
+        </button>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <p className="text-red-700 text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Map */}
+      {userLocation && (
+        <CafeMap
+          cafes={cafes}
+          center={userLocation}
+          onCafeClick={handleCafeClick}
+          className="w-full h-80 md:h-96"
+        />
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center py-4">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+        </div>
+      )}
+
+      {/* Cafe List */}
+      <div className="grid gap-3">
+        {cafes.slice(0, 10).map(cafe => (
+          <div 
+            key={cafe.id} 
+            className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+            onClick={() => handleCafeClick(cafe)}
+          >
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900">{cafe.name}</h3>
+                <p className="text-sm text-gray-600 mt-1">{cafe.address}</p>
+                <p className="text-xs text-gray-500 mt-1">{cafe.campus}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-medium text-purple-600">
+                  {cafe.avgrating ? `${cafe.avgrating.toFixed(1)}/10` : 'No reviews'}
+                </p>
+                {cafe.ratingcount ? (
+                  <p className="text-xs text-gray-500">{cafe.ratingcount} reviews</p>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Load More Button */}
+      {cafes.length > 10 && (
+        <button className="w-full py-2 text-purple-600 font-medium hover:bg-purple-50 rounded-lg transition-colors">
+          Load More Cafes
+        </button>
+      )}
+    </div>
+  );
+};
+
+Step 7: Update API Endpoints (Backend Migration)
+Update your existing Express.js endpoints to handle both legacy and new systems:
+typescript
+// In your Express.js server routes
+
+// GET /api/coffee-shops - Updated to handle both Google Places and Geoapify
+app.get('/api/coffee-shops', async (req, res) => {
+  const { campus, search, lat, lng } = req.query;
+  
+  try {
+    let cafes = [];
+    
+    // Fetch from database first
+    const { data: dbCafes, error } = await supabase
+      .from('cafes')
+      .select('*')
+      .eq('campus', campus)
+      .ilike('name', `%${search || ''}%`);
+    
+    if (error) {
+      console.error('Database error:', error);
+      return res.status(500).json({ error: 'Database query failed' });
+    }
+    
+    cafes = dbCafes || [];
+    
+    // If location provided, also search Geoapify for additional cafes
+    if (lat && lng && !search) {
+      try {
+        const geoapifyCafes = await geoapifyService.searchCafesNearCampus(
+          parseFloat(lat), 
+          parseFloat(lng)
+        );
+        
+        // Convert and add new cafes not in database
+        const newCafes = geoapifyCafes
+          .filter(place => !cafes.some(cafe => 
+            cafe.name.toLowerCase() === place.properties.name.toLowerCase()
+          ))
+          .map(place => ({
+            id: place.place_id,
+            name: place.properties.name,
+            address: place.properties.formatted,
+            latitude: place.properties.lat,
+            longitude: place.properties.lon,
+            campus: campus,
+            avgrating: 0,
+            ratingcount: 0,
+            geoapify_place_id: place.place_id,
+          }));
+        
+        cafes = [...cafes, ...newCafes];
+      } catch (error) {
+        console.warn('Geoapify search failed:', error);
+      }
+    }
+    
+    res.json({ 
+      coffeeshops: cafes,
+      total: cafes.length,
+      source: 'hybrid'  // Indicates mixed data sources
+    });
+    
+  } catch (error) {
+    console.error('API error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+Step 8: Test Implementation
+Create test file src/test-migration.tsx to verify everything works:
+typescript
+import React, { useEffect, useState } from 'react';
+import { CafeMap } from './components/CafeMap';
+import { geoapifyService } from './services/geoapifyService';
+
+export const TestMigration = () => {
+  const [status, setStatus] = useState('Testing...');
+  
+  useEffect(() => {
+    const runTests = async () => {
+      // Test 1: API Key
+      if (!process.env.REACT_APP_GEOAPIFY_API_KEY) {
+        setStatus('❌ API key missing');
+        return;
+      }
+      
+      // Test 2: Service call
+      try {
+        const cafes = await geoapifyService.searchCafesNearCampus(40.7357, -73.9927);
+        setStatus(`✅ Found ${cafes.length} cafes - Migration successful!`);
+      } catch (error) {
+        setStatus('❌ Service call failed');
+      }
+    };
+    
+    runTests();
+  }, []);
+  
+  return <div className="p-4 text-center">{status}</div>;
+};
+
+CRITICAL SUCCESS METRICS:
+✅ Map renders with OpenStreetMap tiles
+✅ Cafe markers display correctly
+✅ Click interactions work
+✅ Mobile responsive
+✅ No Google Maps console errors
+✅ Geoapify API calls successful
+✅ Database integration working
+POST-IMPLEMENTATION:
+Remove all Google Maps code from existing components
+Update your review submission flow to use Geoapify place IDs
+Test the complete user journey from discovery → review → map view
+Deploy to production immediately
+MIGRATION COMPLETE - ZERO API COSTS, FULL FUNCTIONALITY MAINTAINED
+DO NOT DEEM THIS MIGRATION REQUEST COMPLETE UNTIL ALL TESTS HAVE PASSED THOROUGHLY. SIMPLY TAKING A SCREENSHOT IS NOT A SATISFACTORY TEST. 
+EXECUTE ALL STEPS NOW IN SEQUENCE.
+
