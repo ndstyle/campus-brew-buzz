@@ -2,23 +2,20 @@ import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Custom Beli-style marker
+// Clean marker without clutter
 const createCafeMarker = (rating?: number) => {
-  const color = rating && rating >= 8 ? '#22c55e' : rating && rating >= 6 ? '#f59e0b' : '#6b7280';
-  const ratingText = rating ? rating.toFixed(1) : 'NEW';
+  const color = rating && rating >= 8 ? '#22c55e' : rating && rating >= 6 ? '#f59e0b' : '#8B5FBF';
+  const displayText = rating ? rating.toFixed(1) : '•';
   
   return L.divIcon({
     html: `
-      <div class="relative">
-        <div class="w-10 h-10 bg-white rounded-full shadow-lg border-2 ${color === '#22c55e' ? 'border-green-500' : color === '#f59e0b' ? 'border-yellow-500' : 'border-gray-500'} flex items-center justify-center">
-          <span class="text-xs font-bold text-gray-800">${ratingText}</span>
-        </div>
-        <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent ${color === '#22c55e' ? 'border-t-green-500' : color === '#f59e0b' ? 'border-t-yellow-500' : 'border-t-gray-500'}"></div>
+      <div class="w-8 h-8 bg-white rounded-full shadow-lg border-2 flex items-center justify-center" style="border-color: ${color};">
+        <span class="text-xs font-bold" style="color: ${color};">${displayText}</span>
       </div>
     `,
     className: 'custom-cafe-marker',
-    iconSize: [40, 45],
-    iconAnchor: [20, 45]
+    iconSize: [32, 32],
+    iconAnchor: [16, 32]
   });
 };
 

@@ -1,127 +1,157 @@
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Bell, Menu, AlertCircle, RefreshCw } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useMapDataGeoapify } from "@/hooks/useMapDataGeoapify";
-import { useUniversities } from '@/hooks/useUniversities';
-import { useUserCampus } from '@/hooks/useUserCampus';
-import { CafeMap } from "@/components/CafeMap";
+import React, { useState, useEffect } from 'react';
+import { CafeMap } from './CafeMap';
+import { CafeDetailCard } from './CafeDetailCard';
+import { ReviewModal } from './ReviewModal';
+import { useMapDataGeoapify } from '../hooks/useMapDataGeoapify';
+import { Search, Filter } from 'lucide-react';
 
-interface MapPageProps {
-  onAddReview?: (cafe: any) => void;
+interface Cafe {
+  id: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  avgrating?: number;
+  ratingcount?: number;
+  cuisine?: string;
+  priceLevel?: number;
+  photos?: string[];
+  phone?: string;
+  website?: string;
+  amenities?: string[];
 }
 
-const MapPage = ({ onAddReview }: MapPageProps) => {
-  const { user } = useAuth();
-  const { cafes, loading, error, fetchCafes, retryFetch, testGeoapifyAPI, setMapCenter } = useMapDataGeoapify();
-  const { getUniversityCoordinates, loading: universitiesLoading } = useUniversities();
-  const { campus, loading: campusLoading } = useUserCampus();
-  
-  // Get initial map center based on user's college from database
-  const [mapCenter, setLocalMapCenter] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
+export const MapPage: React.FC = () => {
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
+  const [reviewingCafe, setReviewingCafe] = useState<Cafe | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { cafes, loading, error, fetchCafes } = useMapDataGeoapify();
 
-  // Combined effect to prevent cascade re-renders - only run once when campus data is ready
   useEffect(() => {
-    if (!campusLoading && campus && !universitiesLoading && !mapCenter) {
-      console.log('🗺️ [MAP PAGE] Setting up map for campus:', campus);
-      const coordinates = getUniversityCoordinates(campus);
-      console.log('🗺️ [MAP PAGE] Campus coordinates:', coordinates);
-      
-      if (coordinates) {
-        setLocalMapCenter(coordinates);
-        setMapCenter(coordinates);
-        
-        // Fetch cafes and test API once
-        console.log('🗺️ [MAP PAGE] Fetching cafes for campus:', campus);
-        fetchCafes(campus, coordinates);
-        testGeoapifyAPI(coordinates);
-      }
+    // Get location on mount
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coords: [number, number] = [position.coords.latitude, position.coords.longitude];
+          setUserLocation(coords);
+          fetchCafes('University of California, Los Angeles', { lat: coords[0], lng: coords[1] });
+          setIsLoading(false);
+        },
+        (error) => {
+          console.error('Location error:', error);
+          // Default to UCLA area
+          const defaultCoords: [number, number] = [34.0689, -118.4452];
+          setUserLocation(defaultCoords);
+          fetchCafes('University of California, Los Angeles', { lat: defaultCoords[0], lng: defaultCoords[1] });
+          setIsLoading(false);
+        }
+      );
+    } else {
+      setIsLoading(false);
     }
-  }, [campus, campusLoading, universitiesLoading, mapCenter]); // Remove function dependencies to prevent loops
+  }, [fetchCafes]);
 
-  const handleAddReview = (cafe: any) => {
-    console.log('🗺️ [MAP PAGE] Handling add review for cafe:', cafe);
-    if (onAddReview) {
-      onAddReview(cafe);
-    }
+  const handleCafeClick = (cafe: Cafe) => {
+    setSelectedCafe(cafe);
   };
 
+  const handleAddReview = (cafe: Cafe) => {
+    setSelectedCafe(null);
+    setReviewingCafe(cafe);
+  };
+
+  const handleSubmitReview = (review: { rating: number; text: string; photos?: string[] }) => {
+    console.log('Submitting review:', review, 'for cafe:', reviewingCafe?.name);
+    // TODO: Submit to your backend
+    setReviewingCafe(null);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Finding cafes near you...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="mobile-container bg-background min-h-screen relative">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-background/95 backdrop-blur-sm">
-        <div className="flex items-center justify-between py-4 px-4">
-          <h1 className="text-xl font-bold">
-            rate<span className="text-primary">ur</span>coffee
-          </h1>
-          <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Menu className="h-5 w-5" />
-            </Button>
+    <div className="relative h-screen bg-white overflow-hidden">
+      {/* Top Header - Minimal */}
+      <div className="absolute top-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm">
+        <div className="flex items-center justify-between p-4">
+          <h1 className="text-lg font-bold text-gray-900">Find Coffee</h1>
+          <div className="flex items-center space-x-2">
+            <button className="p-2 hover:bg-gray-100 rounded-full">
+              <Search size={20} className="text-gray-600" />
+            </button>
+            <button className="p-2 hover:bg-gray-100 rounded-full">
+              <Filter size={20} className="text-gray-600" />
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Map Container */}
-      <div className="w-full h-screen pt-16">
-        {mapCenter ? (
+      {/* Full Screen Map */}
+      {userLocation && (
+        <div className="absolute inset-0 pt-16">
           <CafeMap
-            center={[mapCenter.lat, mapCenter.lng]}
-            zoom={mapCenter.zoom || 15}
             cafes={cafes.map(cafe => ({
               id: cafe.id,
               name: cafe.name,
-              latitude: cafe.lat || 0,
-              longitude: cafe.lng || 0,
-              averageRating: cafe.averageRating,
-              reviewCount: cafe.reviewCount,
+              latitude: cafe.latitude || cafe.lat || 0,
+              longitude: cafe.longitude || cafe.lng || 0,
+              avgrating: cafe.averageRating || cafe.avgrating,
+              ratingcount: cafe.reviewCount || cafe.ratingcount,
               address: cafe.address || 'Address not available',
-              campus: cafe.campus,
-              hasUserReview: cafe.hasUserReview,
+              cuisine: cafe.cuisine,
+              priceLevel: cafe.priceLevel,
+              photos: cafe.photos
             }))}
-            onCafeClick={handleAddReview}
+            center={userLocation}
+            onCafeClick={handleCafeClick}
             className="w-full h-full"
           />
-        ) : (
-          <div className="w-full h-full bg-muted/30 flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground">
-                {campusLoading || universitiesLoading ? 'Loading campus data...' : 'Loading map...'}
-              </p>
-              {!campusLoading && !universitiesLoading && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Campus: {campus || 'Unknown'}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
+        </div>
+      )}
 
-        {/* Error overlay */}
-        {error && (
-          <div className="absolute top-20 left-4 right-4 z-20">
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center space-x-3">
-              <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm text-destructive">Failed to load coffee shops</p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={retryFetch}
-                className="flex-shrink-0"
-              >
-                <RefreshCw className="h-4 w-4 mr-1" />
-                Retry
-              </Button>
-            </div>
+      {/* Error Display */}
+      {error && (
+        <div className="absolute top-20 left-4 right-4 z-30 bg-red-50 border border-red-200 rounded-lg p-3">
+          <p className="text-red-700 text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Loading Indicator */}
+      {loading && (
+        <div className="absolute top-20 left-4 right-4 z-30 bg-white rounded-lg p-3 shadow-lg">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></div>
+            <span className="text-sm text-gray-600">Loading cafes...</span>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Cafe Detail Modal */}
+      {selectedCafe && (
+        <CafeDetailCard
+          cafe={selectedCafe}
+          onClose={() => setSelectedCafe(null)}
+          onAddReview={handleAddReview}
+        />
+      )}
+
+      {/* Review Modal */}
+      {reviewingCafe && (
+        <ReviewModal
+          cafe={reviewingCafe}
+          onClose={() => setReviewingCafe(null)}
+          onSubmit={handleSubmitReview}
+        />
+      )}
     </div>
   );
 };

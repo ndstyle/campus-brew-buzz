@@ -1,56 +1,48 @@
 import React, { useState } from 'react';
-import { X, Camera, Star } from 'lucide-react';
-
-interface Cafe {
-  id: string;
-  name: string;
-  address: string;
-}
+import { X, Star } from 'lucide-react';
 
 interface ReviewModalProps {
-  cafe: Cafe;
+  cafe: { id: string; name: string; address: string };
   onClose: () => void;
-  onSubmit: (review: { rating: number; text: string; photos?: string[] }) => void;
+  onSubmit: (review: { rating: number; text: string }) => void;
 }
 
 export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmit }) => {
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
-  const [photos, setPhotos] = useState<string[]>([]);
 
   const handleSubmit = () => {
     if (rating === 0) return;
-    
-    onSubmit({
-      rating,
-      text: reviewText,
-      photos
-    });
-    onClose();
+    onSubmit({ rating, text: reviewText });
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden">
+      <div className="bg-white w-full max-w-sm rounded-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-bold">Rate {cafe.name}</h2>
-          <button onClick={onClose} className="p-1">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-lg font-bold">Rate & Review</h2>
+          <button onClick={onClose}>
             <X size={20} className="text-gray-500" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 space-y-4">
+          {/* Cafe info */}
+          <div className="text-center pb-2">
+            <h3 className="font-semibold text-gray-900">{cafe.name}</h3>
+            <p className="text-sm text-gray-600">{cafe.address}</p>
+          </div>
+
           {/* Rating */}
           <div className="text-center">
-            <p className="text-gray-600 mb-4">How would you rate this place?</p>
-            <div className="flex justify-center space-x-2 mb-2">
+            <p className="text-gray-700 mb-3">How would you rate it?</p>
+            <div className="flex justify-center space-x-1 mb-2">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
                 <button
                   key={num}
                   onClick={() => setRating(num)}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                  className={`w-8 h-8 rounded-full text-sm font-bold ${
                     rating >= num
                       ? 'bg-purple-600 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -60,38 +52,24 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmi
                 </button>
               ))}
             </div>
-            <p className="text-2xl font-bold text-purple-600">{rating}/10</p>
+            {rating > 0 && (
+              <p className="text-xl font-bold text-purple-600">{rating}/10</p>
+            )}
           </div>
 
           {/* Review text */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tell us about your experience (optional)
-            </label>
-            <textarea
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-              placeholder="What did you love? What could be better?"
-              className="w-full h-24 p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 resize-none"
-            />
-          </div>
+          <textarea
+            value={reviewText}
+            onChange={(e) => setReviewText(e.target.value)}
+            placeholder="Share your experience... (optional)"
+            className="w-full h-20 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          />
 
-          {/* Photo upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Add photos (optional)
-            </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-              <Camera size={32} className="mx-auto text-gray-400 mb-2" />
-              <p className="text-sm text-gray-500">Tap to add photos</p>
-            </div>
-          </div>
-
-          {/* Submit button */}
+          {/* Submit */}
           <button
             onClick={handleSubmit}
             disabled={rating === 0}
-            className="w-full py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Submit Review
           </button>
