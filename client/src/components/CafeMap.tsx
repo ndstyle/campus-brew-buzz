@@ -52,8 +52,9 @@ export const CafeMap: React.FC<CafeMapProps> = ({ cafes, center, onCafeClick, cl
 
     // Initialize map only once
     if (!mapRef.current) {
+      console.log('🗺️ Initializing Leaflet map...');
       const map = L.map(mapContainerRef.current, {
-        zoomControl: false,
+        zoomControl: true,
         scrollWheelZoom: true,
         touchZoom: true,
         doubleClickZoom: true,
@@ -70,6 +71,8 @@ export const CafeMap: React.FC<CafeMapProps> = ({ cafes, center, onCafeClick, cl
         attribution: '© OpenStreetMap, © CartoDB',
         maxZoom: 19,
       }).addTo(map);
+      
+      console.log('🗺️ Map initialized with center:', center);
     }
 
     // Clear existing markers

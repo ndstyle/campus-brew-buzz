@@ -110,12 +110,16 @@ export const MapPage: React.FC = () => {
   }
 
   return (
-    <div className="relative h-screen bg-white overflow-hidden">
+    <div className="relative h-screen bg-gray-50">
+      {/* Debug Info */}
+      <div className="absolute top-4 left-4 z-20 bg-white rounded px-2 py-1 text-xs text-gray-600 shadow">
+        Cafes: {cafes.length} | Loading: {loading ? 'Yes' : 'No'} | Location: {userLocation ? 'Set' : 'None'}
+      </div>
 
       {/* Mobile-Optimized Map */}
-      {userLocation && (
-        <div className="px-4 pt-4 pb-20">
-          <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
+      {userLocation ? (
+        <div className="p-4 pb-20">
+          <div className="bg-white rounded-lg overflow-hidden shadow-md border border-gray-200" style={{ height: '400px' }}>
             <CafeMap
               cafes={cafes.map(cafe => ({
                 id: cafe.id,
@@ -131,8 +135,15 @@ export const MapPage: React.FC = () => {
               }))}
               center={userLocation}
               onCafeClick={handleCafeClick}
-              className="w-full h-96"
+              className="w-full h-full"
             />
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
+            <p className="text-gray-600">Loading map...</p>
           </div>
         </div>
       )}
