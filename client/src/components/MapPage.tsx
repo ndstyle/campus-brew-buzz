@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CafeMap } from './CafeMap';
 import { CafeDetailCard } from './CafeDetailCard';
 import { ReviewModal } from './ReviewModal';
 import { useMapDataGeoapify } from '../hooks/useMapDataGeoapify';
-import { Search, Filter } from 'lucide-react';
+import { useUserCampus } from '../hooks/useUserCampus';
+import { useUniversities } from '../hooks/useUniversities';
+import { Menu, Trophy, Coffee, Search, Star, User } from 'lucide-react';
 
 interface Cafe {
   id: string;
@@ -22,57 +24,84 @@ interface Cafe {
 }
 
 export const MapPage: React.FC = () => {
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [reviewingCafe, setReviewingCafe] = useState<Cafe | null>(null);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const { campus: userCampus, loading: campusLoading } = useUserCampus();
+  const { getUniversityCoordinates } = useUniversities();
   const { cafes, loading, error, fetchCafes } = useMapDataGeoapify();
 
   useEffect(() => {
-    // Get location on mount
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const coords: [number, number] = [position.coords.latitude, position.coords.longitude];
+    const initializeLocation = async () => {
+      if (!campusLoading && userCampus) {
+        // Use user's college location as default
+        const campusCoords = getUniversityCoordinates(userCampus);
+        if (campusCoords) {
+          const coords: [number, number] = [campusCoords.lat, campusCoords.lng];
           setUserLocation(coords);
-          fetchCafes('University of California, Los Angeles', { lat: coords[0], lng: coords[1] });
+          fetchCafes(userCampus, { lat: coords[0], lng: coords[1] });
           setIsLoading(false);
-        },
-        (error) => {
-          console.error('Location error:', error);
-          // Default to UCLA area
-          const defaultCoords: [number, number] = [34.0689, -118.4452];
-          setUserLocation(defaultCoords);
-          fetchCafes('University of California, Los Angeles', { lat: defaultCoords[0], lng: defaultCoords[1] });
-          setIsLoading(false);
+          return;
         }
-      );
-    } else {
-      setIsLoading(false);
-    }
-  }, [fetchCafes]);
+      }
 
-  const handleCafeClick = (cafe: Cafe) => {
+      // Fallback to geolocation
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const coords: [number, number] = [position.coords.latitude, position.coords.longitude];
+            setUserLocation(coords);
+            fetchCafes(userCampus || 'University of California, Los Angeles', { lat: coords[0], lng: coords[1] });
+            setIsLoading(false);
+          },
+          (error) => {
+            console.error('Location error:', error);
+            // Final fallback to UCLA
+            const defaultCoords: [number, number] = [34.0689, -118.4452];
+            setUserLocation(defaultCoords);
+            fetchCafes('University of California, Los Angeles', { lat: defaultCoords[0], lng: defaultCoords[1] });
+            setIsLoading(false);
+          }
+        );
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    initializeLocation();
+  }, [campusLoading, userCampus, getUniversityCoordinates, fetchCafes]);
+
+  const handleCafeClick = useCallback((cafe: Cafe) => {
+    console.log('Cafe clicked:', cafe.name);
     setSelectedCafe(cafe);
-  };
+  }, []);
 
-  const handleAddReview = (cafe: Cafe) => {
+  const handleAddReview = useCallback((cafe: Cafe) => {
     setSelectedCafe(null);
     setReviewingCafe(cafe);
-  };
+  }, []);
 
-  const handleSubmitReview = (review: { rating: number; text: string; photos?: string[] }) => {
+  const handleSubmitReview = useCallback((review: { rating: number; text: string }) => {
     console.log('Submitting review:', review, 'for cafe:', reviewingCafe?.name);
-    // TODO: Submit to your backend
     setReviewingCafe(null);
-  };
+  }, [reviewingCafe]);
 
-  if (isLoading) {
+  const handleCloseCard = useCallback(() => {
+    setSelectedCafe(null);
+  }, []);
+
+  const handleCloseReview = useCallback(() => {
+    setReviewingCafe(null);
+  }, []);
+
+  if (isLoading || campusLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-white">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Finding cafes near you...</p>
+          <p className="mt-2 text-gray-600 text-sm">finding cafes near you...</p>
         </div>
       </div>
     );
@@ -80,24 +109,19 @@ export const MapPage: React.FC = () => {
 
   return (
     <div className="relative h-screen bg-white overflow-hidden">
-      {/* Top Header - Minimal */}
-      <div className="absolute top-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-sm">
+      {/* Top Header */}
+      <div className="absolute top-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-sm">
         <div className="flex items-center justify-between p-4">
-          <h1 className="text-lg font-bold text-gray-900">Find Coffee</h1>
-          <div className="flex items-center space-x-2">
-            <button className="p-2 hover:bg-gray-100 rounded-full">
-              <Search size={20} className="text-gray-600" />
-            </button>
-            <button className="p-2 hover:bg-gray-100 rounded-full">
-              <Filter size={20} className="text-gray-600" />
-            </button>
-          </div>
+          <h1 className="text-base font-normal text-gray-700">find coffee</h1>
+          <button className="p-2 hover:bg-gray-100 rounded-full">
+            <Menu size={20} className="text-gray-600" />
+          </button>
         </div>
       </div>
 
       {/* Full Screen Map */}
       {userLocation && (
-        <div className="absolute inset-0 pt-16">
+        <div className="absolute inset-0 pt-16 pb-20">
           <CafeMap
             cafes={cafes.map(cafe => ({
               id: cafe.id,
@@ -106,7 +130,7 @@ export const MapPage: React.FC = () => {
               longitude: cafe.longitude || cafe.lng || 0,
               avgrating: cafe.averageRating || cafe.avgrating,
               ratingcount: cafe.reviewCount || cafe.ratingcount,
-              address: cafe.address || 'Address not available',
+              address: cafe.address || 'address not available',
               cuisine: cafe.cuisine,
               priceLevel: cafe.priceLevel,
               photos: cafe.photos
@@ -117,6 +141,32 @@ export const MapPage: React.FC = () => {
           />
         </div>
       )}
+
+      {/* Bottom Navigation */}
+      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-30">
+        <div className="flex justify-around items-center">
+          <button className="flex flex-col items-center py-2 px-3">
+            <Trophy size={20} className="text-gray-400 mb-1" />
+            <span className="text-xs text-gray-500">leaderboard</span>
+          </button>
+          <button className="flex flex-col items-center py-2 px-3 text-purple-600">
+            <Coffee size={20} className="text-purple-600 mb-1" />
+            <span className="text-xs font-medium">find coffee</span>
+          </button>
+          <button className="flex flex-col items-center py-2 px-3">
+            <Search size={20} className="text-gray-400 mb-1" />
+            <span className="text-xs text-gray-500">search + review</span>
+          </button>
+          <button className="flex flex-col items-center py-2 px-3">
+            <Star size={20} className="text-gray-400 mb-1" />
+            <span className="text-xs text-gray-500">feed</span>
+          </button>
+          <button className="flex flex-col items-center py-2 px-3">
+            <User size={20} className="text-gray-400 mb-1" />
+            <span className="text-xs text-gray-500">my profile</span>
+          </button>
+        </div>
+      </div>
 
       {/* Error Display */}
       {error && (
@@ -130,7 +180,7 @@ export const MapPage: React.FC = () => {
         <div className="absolute top-20 left-4 right-4 z-30 bg-white rounded-lg p-3 shadow-lg">
           <div className="flex items-center">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></div>
-            <span className="text-sm text-gray-600">Loading cafes...</span>
+            <span className="text-sm text-gray-600">loading cafes...</span>
           </div>
         </div>
       )}
@@ -139,7 +189,7 @@ export const MapPage: React.FC = () => {
       {selectedCafe && (
         <CafeDetailCard
           cafe={selectedCafe}
-          onClose={() => setSelectedCafe(null)}
+          onClose={handleCloseCard}
           onAddReview={handleAddReview}
         />
       )}
@@ -148,7 +198,7 @@ export const MapPage: React.FC = () => {
       {reviewingCafe && (
         <ReviewModal
           cafe={reviewingCafe}
-          onClose={() => setReviewingCafe(null)}
+          onClose={handleCloseReview}
           onSubmit={handleSubmitReview}
         />
       )}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, MapPin, Phone, Globe, Calendar, Star, Camera, MessageCircle } from 'lucide-react';
+import { X, Globe, Phone, Calendar, ChevronRight } from 'lucide-react';
 
 interface Cafe {
   id: string;
@@ -26,87 +26,126 @@ interface CafeDetailCardProps {
 
 export const CafeDetailCard: React.FC<CafeDetailCardProps> = ({ cafe, onClose, onAddReview }) => {
   const priceString = cafe.priceLevel ? '$'.repeat(cafe.priceLevel) : '$$';
-  const recScore = cafe.avgrating || 0;
-  const friendScore = (cafe.avgrating || 0) * 0.9; // Mock friend score
+  const recScore = cafe.avgrating || 8.3;
+  const friendScore = 8.2; // Mock friend score
+  
+  // Mock photos for demo - in real app these would come from cafe.photos
+  const mockPhotos = [
+    'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&h=300&fit=crop'
+  ];
 
   return (
-    <div className="fixed inset-0 z-40 bg-black bg-opacity-50 flex items-end justify-center">
-      <div className="bg-white w-full max-w-md rounded-t-3xl max-h-[80vh] overflow-hidden mb-16">
-        {/* Header with close button */}
-        <div className="relative">
+    <div className="fixed inset-0 z-50 bg-black/30 flex items-end justify-center">
+      <div className="bg-white w-full max-w-md rounded-t-2xl max-h-[85vh] overflow-hidden shadow-2xl animate-slide-in-bottom">
+        {/* Header with mini map */}
+        <div className="relative h-32 bg-gradient-to-br from-gray-100 to-gray-200">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg"
+            className="absolute top-3 right-3 z-10 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-lg"
           >
             <X size={16} className="text-gray-600" />
           </button>
-          
-          {/* Mini map placeholder */}
-          <div className="h-24 bg-gradient-to-br from-purple-400 to-purple-600 relative">
-            <div className="absolute bottom-2 left-4 text-white text-sm font-medium">
-              {cafe.name}
-            </div>
+          <div className="absolute bottom-3 left-4 text-gray-800 text-sm font-medium">
+            {cafe.name}
           </div>
         </div>
 
-        {/* Content with proper spacing */}
-        <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
-          {/* Amenities/Tags */}
-          {cafe.amenities && cafe.amenities.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {cafe.amenities.map((amenity, i) => (
-                <span key={i} className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700">
-                  {amenity}
-                </span>
-              ))}
-            </div>
-          )}
+        {/* Content */}
+        <div className="p-4 space-y-4 max-h-[calc(85vh-8rem)] overflow-y-auto">
+          {/* Tags */}
+          <div className="flex flex-wrap gap-2">
+            <span className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700">casual dinner</span>
+            <span className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700">date night</span>
+            <span className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700">outdoor seating</span>
+            <span className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700">lunch</span>
+          </div>
 
-          {/* Cafe name and info */}
+          {/* Name and details */}
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-1">{cafe.name}</h2>
-            <p className="text-sm text-gray-600">{cafe.address}</p>
+            <div className="text-sm text-gray-600 mb-1">
+              {priceString} | {cafe.cuisine || 'italian, pizza'}
+            </div>
+            <div className="text-sm text-gray-500">{cafe.address}</div>
           </div>
 
-          {/* Quick actions */}
-          <div className="flex space-x-3">
-            <button className="flex-1 py-2 px-3 bg-gray-100 rounded-lg text-sm font-medium">
-              Directions
+          {/* Action buttons */}
+          <div className="grid grid-cols-3 gap-3">
+            <button className="flex flex-col items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+              <Globe size={20} className="text-gray-600 mb-1" />
+              <span className="text-xs text-gray-600">website</span>
             </button>
-            <button className="flex-1 py-2 px-3 bg-gray-100 rounded-lg text-sm font-medium">
-              Call
+            <button className="flex flex-col items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+              <Phone size={20} className="text-gray-600 mb-1" />
+              <span className="text-xs text-gray-600">call</span>
             </button>
-            <button 
-              onClick={() => onAddReview(cafe)}
-              className="flex-1 py-2 px-3 bg-purple-600 text-white rounded-lg text-sm font-medium"
-            >
-              Review
+            <button className="flex flex-col items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+              <Calendar size={20} className="text-gray-600 mb-1" />
+              <span className="text-xs text-gray-600">reserve</span>
             </button>
           </div>
 
-          {/* Rating display */}
-          {cafe.avgrating ? (
-            <div className="flex items-center space-x-4 py-3 bg-gray-50 rounded-lg px-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{cafe.avgrating.toFixed(1)}</div>
-                <div className="text-xs text-gray-500">Rating</div>
+          {/* Scores */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3">scores</h3>
+            <div className="flex space-x-6">
+              {/* Rec Score */}
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-xl font-bold text-green-700">{recScore.toFixed(1)}</span>
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-600 rounded-full text-white text-xs flex items-center justify-center font-bold">
+                    {cafe.ratingcount || 21}
+                  </div>
+                </div>
+                <div>
+                  <div className="font-medium text-gray-900">rec score</div>
+                  <div className="text-xs text-gray-500">how much we think<br/>you will like it</div>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-lg font-semibold text-gray-700">{cafe.ratingcount || 0}</div>
-                <div className="text-xs text-gray-500">Reviews</div>
+
+              {/* Friend Score */}
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center">
+                    <span className="text-xl font-bold text-teal-700">{friendScore.toFixed(1)}</span>
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-teal-600 rounded-full text-white text-xs flex items-center justify-center font-bold">
+                    1
+                  </div>
+                </div>
+                <div>
+                  <div className="font-medium text-gray-900">friend score</div>
+                  <div className="text-xs text-gray-500">what your<br/>friends think</div>
+                </div>
               </div>
             </div>
-          ) : (
-            <div className="py-6 text-center bg-gray-50 rounded-lg">
-              <p className="text-gray-600 mb-3">No reviews yet</p>
-              <button 
-                onClick={() => onAddReview(cafe)}
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium"
-              >
-                Be the first to review!
+          </div>
+
+          {/* Popular dishes */}
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-semibold">popular dishes</h3>
+              <button className="text-sm text-blue-600 font-medium">see all photos</button>
+            </div>
+            <div className="flex space-x-3 overflow-x-auto">
+              {mockPhotos.map((photo, i) => (
+                <img 
+                  key={i} 
+                  src={photo} 
+                  alt={`dish ${i + 1}`} 
+                  className="w-24 h-24 rounded-lg object-cover flex-shrink-0" 
+                />
+              ))}
+              <button className="w-24 h-24 border border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 flex-shrink-0">
+                <ChevronRight size={16} />
+                <span className="text-xs mt-1">all photos</span>
               </button>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

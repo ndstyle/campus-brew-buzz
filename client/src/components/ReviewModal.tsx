@@ -17,11 +17,11 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmi
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-sm rounded-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-lg font-bold">Rate & Review</h2>
+          <h2 className="text-lg font-semibold">rate & review</h2>
           <button onClick={onClose}>
             <X size={20} className="text-gray-500" />
           </button>
@@ -36,13 +36,13 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmi
 
           {/* Rating */}
           <div className="text-center">
-            <p className="text-gray-700 mb-3">How would you rate it?</p>
+            <p className="text-gray-700 mb-3 text-sm">how would you rate it?</p>
             <div className="flex justify-center space-x-1 mb-2">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
                 <button
                   key={num}
                   onClick={() => setRating(num)}
-                  className={`w-8 h-8 rounded-full text-sm font-bold ${
+                  className={`w-8 h-8 rounded-full text-sm font-bold transition-colors ${
                     rating >= num
                       ? 'bg-purple-600 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -61,17 +61,17 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmi
           <textarea
             value={reviewText}
             onChange={(e) => setReviewText(e.target.value)}
-            placeholder="Share your experience... (optional)"
-            className="w-full h-20 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            placeholder="share your experience... (optional)"
+            className="w-full h-20 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
           />
 
           {/* Submit */}
           <button
             onClick={handleSubmit}
             disabled={rating === 0}
-            className="w-full py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-purple-600 text-white rounded-xl font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
-            Submit Review
+            submit review
           </button>
         </div>
       </div>

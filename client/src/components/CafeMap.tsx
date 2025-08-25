@@ -1,21 +1,20 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Clean marker without clutter
-const createCafeMarker = (rating?: number) => {
-  const color = rating && rating >= 8 ? '#22c55e' : rating && rating >= 6 ? '#f59e0b' : '#8B5FBF';
-  const displayText = rating ? rating.toFixed(1) : '•';
-  
+// Clean marker design matching screenshots
+const createCafeMarker = () => {
   return L.divIcon({
     html: `
-      <div class="w-8 h-8 bg-white rounded-full shadow-lg border-2 flex items-center justify-center" style="border-color: ${color};">
-        <span class="text-xs font-bold" style="color: ${color};">${displayText}</span>
+      <div class="w-6 h-8 flex flex-col items-center">
+        <div class="w-6 h-6 bg-black rounded-full border-2 border-white shadow-lg"></div>
+        <div class="w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-black"></div>
       </div>
     `,
     className: 'custom-cafe-marker',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32]
+    iconSize: [24, 32],
+    iconAnchor: [12, 32],
+    popupAnchor: [0, -32]
   });
 };
 
@@ -42,51 +41,90 @@ interface CafeMapProps {
 export const CafeMap: React.FC<CafeMapProps> = ({ cafes, center, onCafeClick, className = "w-full h-full" }) => {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const markersRef = useRef<L.Marker[]>([]);
+
+  const handleCafeClick = useCallback((cafe: Cafe) => {
+    onCafeClick(cafe);
+  }, [onCafeClick]);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    const map = L.map(mapContainerRef.current, {
-      zoomControl: false, // Remove default zoom controls
-      scrollWheelZoom: true,
-      touchZoom: true,
-    }).setView(center, 15);
+    // Initialize map only once
+    if (!mapRef.current) {
+      const map = L.map(mapContainerRef.current, {
+        zoomControl: false,
+        scrollWheelZoom: true,
+        touchZoom: true,
+        doubleClickZoom: true,
+        boxZoom: false,
+        keyboard: false,
+        dragging: true,
+        tap: true,
+        tapTolerance: 15
+      }).setView(center, 15);
 
-    mapRef.current = map;
+      mapRef.current = map;
 
-    // Use lighter map tiles for better contrast
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap, © CartoDB',
-      maxZoom: 19,
-    }).addTo(map);
+      // Add map tiles
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap, © CartoDB',
+        maxZoom: 19,
+      }).addTo(map);
+    }
 
-    // Add custom zoom control in top-right
-    L.control.zoom({ position: 'topright' }).addTo(map);
+    // Clear existing markers
+    markersRef.current.forEach(marker => {
+      mapRef.current?.removeLayer(marker);
+    });
+    markersRef.current = [];
 
-    // Add cafe markers with Beli styling
+    // Add new markers
     cafes.forEach((cafe) => {
-      const marker = L.marker([cafe.latitude, cafe.longitude], {
-        icon: createCafeMarker(cafe.avgrating)
-      });
-      
-      // Remove popup, handle click directly
-      marker.on('click', () => onCafeClick(cafe));
-      marker.addTo(map);
+      if (mapRef.current && cafe.latitude && cafe.longitude) {
+        const marker = L.marker([cafe.latitude, cafe.longitude], {
+          icon: createCafeMarker()
+        });
+        
+        marker.on('click', (e) => {
+          e.originalEvent?.stopPropagation();
+          handleCafeClick(cafe);
+        });
+        
+        marker.addTo(mapRef.current);
+        markersRef.current.push(marker);
+      }
     });
 
+    // Update map center if needed
+    if (mapRef.current) {
+      mapRef.current.setView(center, 15);
+    }
+
+    return () => {
+      // Clean up markers on unmount
+      markersRef.current.forEach(marker => {
+        mapRef.current?.removeLayer(marker);
+      });
+      markersRef.current = [];
+    };
+  }, [cafes, center, handleCafeClick]);
+
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
       }
     };
-  }, [cafes, center, onCafeClick]);
+  }, []);
 
   return (
     <div 
       ref={mapContainerRef} 
       className={`${className} relative`}
-      style={{ minHeight: '100vh' }}
+      style={{ minHeight: '100vh', width: '100%' }}
     />
   );
 };
