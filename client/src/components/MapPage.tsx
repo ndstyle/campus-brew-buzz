@@ -35,9 +35,13 @@ export const MapPage: React.FC = () => {
 
   useEffect(() => {
     let mounted = true;
+    let hasInitialized = false;
     
     const initializeLocation = async () => {
-      if (!mounted) return;
+      if (!mounted || hasInitialized) return;
+      hasInitialized = true;
+      
+      console.log('🎯 MapPage: Initializing location once...', { campusLoading, userCampus });
       
       if (!campusLoading && userCampus) {
         // Use user's college location as default
@@ -45,37 +49,17 @@ export const MapPage: React.FC = () => {
         if (campusCoords && mounted) {
           const coords: [number, number] = [campusCoords.lat, campusCoords.lng];
           setUserLocation(coords);
-          fetchCafes(userCampus, { lat: coords[0], lng: coords[1] });
+          await fetchCafes(userCampus, { lat: coords[0], lng: coords[1] });
           setIsLoading(false);
           return;
         }
       }
 
-      // Fallback to geolocation only if no campus data
-      if (!userCampus && navigator.geolocation && mounted) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            if (!mounted) return;
-            const coords: [number, number] = [position.coords.latitude, position.coords.longitude];
-            setUserLocation(coords);
-            fetchCafes('University of California, Los Angeles', { lat: coords[0], lng: coords[1] });
-            setIsLoading(false);
-          },
-          (error) => {
-            if (!mounted) return;
-            console.error('Location error:', error);
-            // Final fallback to UCLA
-            const defaultCoords: [number, number] = [34.0689, -118.4452];
-            setUserLocation(defaultCoords);
-            fetchCafes('University of California, Los Angeles', { lat: defaultCoords[0], lng: defaultCoords[1] });
-            setIsLoading(false);
-          }
-        );
-      } else if (!userCampus && mounted) {
-        // No geolocation support, use default
+      // Fallback: Just use default UCLA coordinates without geolocation
+      if (!userCampus && mounted) {
         const defaultCoords: [number, number] = [34.0689, -118.4452];
         setUserLocation(defaultCoords);
-        fetchCafes('University of California, Los Angeles', { lat: defaultCoords[0], lng: defaultCoords[1] });
+        await fetchCafes('University of California, Los Angeles', { lat: defaultCoords[0], lng: defaultCoords[1] });
         setIsLoading(false);
       }
     };

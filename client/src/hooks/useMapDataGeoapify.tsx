@@ -9,6 +9,7 @@ export const useMapDataGeoapify = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const { searchNearbyCafes, testGeoapifyAPI, placesLoading, placesError } = useGeoapify();
@@ -121,8 +122,14 @@ export const useMapDataGeoapify = () => {
 
   // Main fetch function
   const fetchCafes = useCallback(async (userCampus: string | null = null, center: { lat: number; lng: number } | null = null) => {
+    if (loading || isInitialized) {
+      console.log('🚫 [MAP DATA GEOAPIFY] Skipping duplicate call - already loading or initialized');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
+    setIsInitialized(true);
     
     debugLog('🚀 Starting comprehensive cafe fetch with Geoapify', { userCampus, center });
 
@@ -172,6 +179,7 @@ export const useMapDataGeoapify = () => {
       debugLog('❌ Error in fetchCafes:', err);
       console.error('Error fetching cafes:', err);
       setError(err.message);
+      setIsInitialized(false); // Reset on error so retry is possible
       toast({
         title: "Error Loading Cafes",
         description: "Failed to load coffee shops. Please try again.",
@@ -180,7 +188,7 @@ export const useMapDataGeoapify = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast, searchNearbyCafes, fetchExistingCafes, mergeAndDeduplicateCafes]);
+  }, [user, toast, searchNearbyCafes, fetchExistingCafes, mergeAndDeduplicateCafes, loading, isInitialized]);
 
   // Function to test Geoapify API
   const testGeoapifyAPIWrapper = useCallback(async (center?: { lat: number; lng: number }) => {
