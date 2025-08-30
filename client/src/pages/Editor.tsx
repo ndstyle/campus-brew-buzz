@@ -44,16 +44,18 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
       const transformedCafe = {
         ...prefilledCafe,
         // Ensure we have the right field names with proper null/undefined handling
-        google_place_id: prefilledCafe.google_place_id || (prefilledCafe as any).place_id || null,
+        geoapify_place_id: prefilledCafe.geoapify_place_id || (prefilledCafe as any).place_id || null,
         address: prefilledCafe.address || (prefilledCafe as any).vicinity || '',
-        campus: prefilledCafe.campus || campus || 'Unknown Campus' // Safe fallback
+        campus: prefilledCafe.campus || campus || 'Unknown Campus', // Safe fallback
+        lat: prefilledCafe.lat || (prefilledCafe as any).latitude,
+        lng: prefilledCafe.lng || (prefilledCafe as any).longitude
       };
       
       console.log('🎯 [EDITOR] Transformed cafe data:', transformedCafe);
       
       // Update the selected cafe if there were any transformations
       // Use shallow comparison instead of JSON.stringify to avoid circular reference issues
-      const hasChanges = transformedCafe.google_place_id !== prefilledCafe.google_place_id ||
+      const hasChanges = transformedCafe.geoapify_place_id !== prefilledCafe.geoapify_place_id ||
                         transformedCafe.address !== prefilledCafe.address ||
                         transformedCafe.campus !== prefilledCafe.campus;
       
@@ -108,9 +110,9 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
 
     console.log("🔍 Selected cafe object:", selectedCafe);
     console.log("🔍 Cafe UUID (selectedCafe.id):", selectedCafe.id);
-    console.log("🔍 Cafe Google Places ID (selectedCafe.google_place_id):", selectedCafe.google_place_id);
+    console.log("🔍 Cafe GEOAPIFY Place ID (selectedCafe.geoapify_place_id):", selectedCafe.geoapify_place_id);
     console.log("🔍 ID type:", typeof selectedCafe.id);
-    console.log("🔍 Google Places ID type:", typeof selectedCafe.google_place_id);
+    console.log("🔍 GEOAPIFY Place ID type:", typeof selectedCafe.geoapify_place_id);
 
     // Sanitize cafe data to ensure only serializable values are included
     const sanitizedCafe = {
@@ -118,7 +120,9 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
       name: selectedCafe.name,
       address: selectedCafe.address,
       campus: selectedCafe.campus,
-      google_place_id: selectedCafe.google_place_id
+      geoapify_place_id: selectedCafe.geoapify_place_id,
+      lat: selectedCafe.lat,
+      lng: selectedCafe.lng
     };
 
     const reviewData: ReviewSubmission = {
@@ -127,22 +131,22 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
       rating: rating[0], // Keep exact decimal value (1-10, step 0.1)
       notes: reviewText.trim(),
       photoUrl: uploadedPhotoUrl || undefined,
-      googlePlaceId: sanitizedCafe.google_place_id, // Pass Google Places ID separately
+      geoapifyPlaceId: sanitizedCafe.geoapify_place_id, // Pass GEOAPIFY Place ID separately
       // Include cafe details for creation if cafe doesn't exist in database (empty ID)
       cafeDetails: !sanitizedCafe.id || sanitizedCafe.id.startsWith('custom-') ? {
         name: sanitizedCafe.name,
         address: sanitizedCafe.address || (selectedCafe as any).vicinity || 'Unknown Address',
         campus: sanitizedCafe.campus || campus || 'Unknown Campus',
-        google_place_id: sanitizedCafe.google_place_id || (selectedCafe as any).place_id,
-        lat: (selectedCafe as any).lat || (selectedCafe as any).geometry?.location?.lat,
-        lng: (selectedCafe as any).lng || (selectedCafe as any).geometry?.location?.lng
+        geoapify_place_id: sanitizedCafe.geoapify_place_id || (selectedCafe as any).place_id,
+        lat: sanitizedCafe.lat || (selectedCafe as any).geometry?.location?.lat,
+        lng: sanitizedCafe.lng || (selectedCafe as any).geometry?.location?.lng
       } : undefined
     };
 
     console.log("📤 Review data being submitted:", reviewData);
     console.log("🏪 Cafe already exists in DB:", !!selectedCafe.id);
     console.log("🏪 Will create new cafe:", !selectedCafe.id && !!reviewData.cafeDetails);
-    console.log("🏪 Google Place ID for cafe:", reviewData.cafeDetails?.google_place_id || selectedCafe.google_place_id);
+    console.log("🏪 GEOAPIFY Place ID for cafe:", reviewData.cafeDetails?.geoapify_place_id || selectedCafe.geoapify_place_id);
 
     try {
       const result = await submitReview(reviewData);

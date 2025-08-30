@@ -1,35 +1,27 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { v4 as uuidv4 } from 'uuid';
+import { useGeoapify } from '@/hooks/useGeoapify';
+import { useUniversities } from '@/hooks/useUniversities';
 
-// Campus coordinates for Google Places search
-const CAMPUS_COORDINATES: { [key: string]: { lat: number; lng: number } } = {
-  'UCLA': { lat: 34.0689, lng: -118.4452 },
-  'University of California, Los Angeles': { lat: 34.0689, lng: -118.4452 },
-  'UC Berkeley': { lat: 37.8719, lng: -122.2585 },
-  'University of California, Berkeley': { lat: 37.8719, lng: -122.2585 },
-  'USC': { lat: 34.0224, lng: -118.2851 },
-  'Stanford': { lat: 37.4419, lng: -122.1430 },
-  'University of Illinois Urbana-Champaign': { lat: 40.1020, lng: -88.2272 },
-  'UIUC': { lat: 40.1020, lng: -88.2272 },
-  'University of Illinois': { lat: 40.1020, lng: -88.2272 },
-  'Illinois': { lat: 40.1020, lng: -88.2272 },
-  // Add more campuses as needed
-};
+// Remove Google Places - using GEOAPIFY instead
 
 export interface CafeResult {
   id: string;
   name: string;
   address?: string;
   campus?: string;
-  google_place_id?: string;
+  geoapify_place_id?: string;
+  lat?: number;
+  lng?: number;
 }
 
 export const useCafeSearch = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<CafeResult[]>([]);
   const { toast } = useToast();
+  const { searchNearbyCafes, searchCafesByName } = useGeoapify();
+  const { getUniversityCoordinates } = useUniversities();
 
   const searchCafes = useCallback(async (searchTerm: string, campus?: string) => {
     console.log("🔍 [CAFE SEARCH] Search triggered for:", searchTerm, "campus:", campus);
@@ -41,7 +33,7 @@ export const useCafeSearch = () => {
     }
 
     if (!campus) {
-      console.error("🔍 [CAFE SEARCH] No campus provided - this is required for Supabase query");
+      console.error("🔍 [CAFE SEARCH] No campus provided");
       toast({
         title: "Campus Required",
         description: "Campus information is needed to search cafes.",
@@ -54,10 +46,20 @@ export const useCafeSearch = () => {
     setIsLoading(true);
     
     try {
-      // Build the query with search and optional campus filter
+      // Get campus coordinates for GEOAPIFY search
+      const campusCoords = getUniversityCoordinates(campus);
+      if (!campusCoords) {
+        console.error("🔍 [CAFE SEARCH] Could not get coordinates for campus:", campus);
+        setResults([]);
+        return;
+      }
+
+      console.log("🔍 [CAFE SEARCH] Using campus coordinates:", campusCoords);
+
+      // Step 1: Search database for existing cafes
       let query = supabase
         .from('cafes')
-        .select('id, name, address, campus, google_place_id')
+        .select('id, name, address, campus, geoapify_place_id, lat, lng')
         .ilike('name', `%${searchTerm}%`)
         .limit(5);
 
@@ -66,39 +68,48 @@ export const useCafeSearch = () => {
       }
 
       console.log("🔍 [CAFE SEARCH] Executing Supabase query...");
-      const { data, error } = await query.order('name');
+      const { data: dbResults, error } = await query.order('name');
 
       if (error) {
         console.error("🔍 [CAFE SEARCH] Supabase query error:", error);
         throw error;
       }
 
-      console.log("🔍 [CAFE SEARCH] Supabase results:", data);
-      console.log("🔍 [CAFE SEARCH] Results count:", data?.length || 0);
+      console.log("🔍 [CAFE SEARCH] Database results:", dbResults?.length || 0);
 
-      // Always search Google Places to show real cafes near university
-      console.log("🔍 [CAFE SEARCH] Searching Google Places for real cafes near campus...");
-      const googlePlacesResults = await searchGooglePlaces(searchTerm, campus);
+      // Step 2: Search GEOAPIFY for nearby cafes (using same logic as map)
+      console.log("🔍 [CAFE SEARCH] Searching GEOAPIFY for nearby cafes...");
+      const geoapifyResults = await searchCafesByName(searchTerm, campusCoords.lat, campusCoords.lng);
       
-      // Combine database and Google Places results, prioritizing database matches
-      const allResults = [...(data || []), ...googlePlacesResults];
-      
-      // Remove duplicates based on name (prioritize database entries)
-      const uniqueResults = allResults.filter((cafe, index, arr) => 
-        arr.findIndex(c => c.name.toLowerCase() === cafe.name.toLowerCase()) === index
-      ).slice(0, 8); // Limit to top 8 results
-      
-      console.log("🔍 [CAFE SEARCH] Combined results:", uniqueResults.length, "cafes found");
-      setResults(uniqueResults);
-      return;
+      console.log("🔍 [CAFE SEARCH] GEOAPIFY results:", geoapifyResults.length);
 
-      // Convert null values to undefined to match CafeResult interface
-      const sanitizedData = (data || []).map(cafe => ({
+      // Step 3: Transform GEOAPIFY results to CafeResult format
+      const transformedGeoapifyResults: CafeResult[] = geoapifyResults.map(place => ({
+        id: '', // Empty ID means new cafe
+        name: place.name,
+        address: place.vicinity || place.address,
+        campus: campus,
+        geoapify_place_id: place.geoapify_place_id || place.place_id,
+        lat: place.latitude || place.lat,
+        lng: place.longitude || place.lng
+      }));
+
+      // Step 4: Convert database results to CafeResult format
+      const transformedDbResults: CafeResult[] = (dbResults || []).map(cafe => ({
         ...cafe,
         address: cafe.address || undefined,
         campus: cafe.campus || undefined
       }));
-      setResults(sanitizedData);
+
+      // Step 5: Combine and deduplicate results (prioritize database entries)
+      const allResults = [...transformedDbResults, ...transformedGeoapifyResults];
+      const uniqueResults = allResults.filter((cafe, index, arr) => 
+        arr.findIndex(c => c.name.toLowerCase() === cafe.name.toLowerCase()) === index
+      ).slice(0, 8); // Limit to top 8 results
+      
+      console.log("🔍 [CAFE SEARCH] Combined unique results:", uniqueResults.length, "cafes found");
+      setResults(uniqueResults);
+
     } catch (error: any) {
       console.error('🔍 [CAFE SEARCH] Search error:', error);
       toast({
@@ -110,63 +121,9 @@ export const useCafeSearch = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, getUniversityCoordinates, searchCafesByName]);
 
-  // Google Places search function
-  const searchGooglePlaces = async (query: string, campus?: string): Promise<CafeResult[]> => {
-    try {
-      if (!campus) {
-        console.warn("🔍 [GOOGLE PLACES] No campus provided, skipping Google Places search");
-        return [];
-      }
-
-      // Get campus coordinates
-      const coordinates = CAMPUS_COORDINATES[campus] || CAMPUS_COORDINATES['University of California, Los Angeles']; // Default to UCLA
-      console.log("🔍 [GOOGLE PLACES] Campus:", campus);
-      console.log("🔍 [GOOGLE PLACES] Using coordinates for", campus, ":", coordinates);
-      console.log("🔍 [GOOGLE PLACES] Available campuses:", Object.keys(CAMPUS_COORDINATES));
-
-      // Call the places-search edge function
-      const { data: placesData, error: placesError } = await supabase.functions.invoke('places-search', {
-        body: {
-          searchQuery: `${query} coffee cafe`,
-          location: coordinates,
-          radius: 5000 // 5km radius around campus
-        }
-      });
-
-      if (placesError) {
-        console.error("🔍 [GOOGLE PLACES] Error calling places-search function:", placesError);
-        return [];
-      }
-
-      if (!placesData?.results || placesData.results.length === 0) {
-        console.log("🔍 [GOOGLE PLACES] No results returned from Google Places");
-        return [];
-      }
-
-      console.log("🔍 [GOOGLE PLACES] Raw results:", placesData.results.length, "places found");
-
-      // Transform Google Places results to match CafeResult schema
-      const transformedResults: CafeResult[] = placesData.results
-        .filter((place: any) => place.name && place.place_id)
-        .slice(0, 5) // Limit to top 5 results
-        .map((place: any) => ({
-          id: uuidv4(), // Generate UUID for database operations
-          name: place.name,
-          address: place.vicinity || place.formatted_address,
-          campus: campus,
-          google_place_id: place.place_id, // Keep Google Places ID for Maps integration
-        }));
-
-      console.log("🔍 [GOOGLE PLACES] Transformed results:", transformedResults);
-      return transformedResults;
-
-    } catch (error) {
-      console.error('🔍 [GOOGLE PLACES] Error searching Google Places:', error);
-      return [];
-    }
-  };
+  // Function removed - using GEOAPIFY instead
 
   const clearResults = useCallback(() => {
     setResults([]);
