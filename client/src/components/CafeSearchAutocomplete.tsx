@@ -10,13 +10,15 @@ interface CafeSearchAutocompleteProps {
   onAddNewCafe: (cafeName: string) => void;
   onBack?: () => void;
   campus?: string;
+  mapCafes?: any[]; // Pass map data to search
 }
 
 const CafeSearchAutocomplete = ({ 
   onCafeSelected, 
   onAddNewCafe, 
   onBack,
-  campus 
+  campus,
+  mapCafes
 }: CafeSearchAutocompleteProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -26,7 +28,7 @@ const CafeSearchAutocomplete = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  const { searchCafes, results, isLoading, clearResults } = useCafeSearch();
+  const { searchCafes, results, isLoading, clearResults } = useCafeSearch(mapCafes);
 
   // Debounced search
   useEffect(() => {

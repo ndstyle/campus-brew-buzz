@@ -24,6 +24,7 @@ const Index = () => {
   const [selectedReview, setSelectedReview] = useState<any>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedCafeForReview, setSelectedCafeForReview] = useState<any>(null);
+  const [mapCafes, setMapCafes] = useState<any[]>([]);
   const { user, loading } = useAuth();
 
   useEffect(() => {
@@ -116,7 +117,12 @@ const Index = () => {
                   }}
                 />
               )}
-              {currentView === "map" && <MapPage onAddReview={handleAddReview} />}
+              {currentView === "map" && (
+                <MapPage 
+                  onAddReview={handleAddReview} 
+                  onCafesLoaded={setMapCafes}
+                />
+              )}
               {currentView === "search" && (
                 <FeedPage 
                   searchMode={true}
@@ -156,6 +162,7 @@ const Index = () => {
                     setSelectedCafeForReview(null); // Clear selection after submission
                   }}
                   prefilledCafe={selectedCafeForReview} // Pass the selected cafe for autofill
+                  mapCafes={mapCafes} // Pass map cafes for search
                 />
               )}
               {currentView === "preview" && (

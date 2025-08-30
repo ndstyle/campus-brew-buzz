@@ -97,6 +97,18 @@ export const CafeDetailCard: React.FC<CafeDetailCardProps> = ({ cafe, onClose, o
             </button>
           </div>
 
+          {/* Review This Cafe Button */}
+          <button 
+            onClick={() => {
+              console.log('🎯 Review button clicked for cafe:', cafe.name);
+              onAddReview(cafe);
+            }}
+            className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+            data-testid="button-review-cafe"
+          >
+            Review This Cafe
+          </button>
+
           {/* Scores */}
           <div>
             <h3 className="text-lg font-semibold mb-3">scores</h3>

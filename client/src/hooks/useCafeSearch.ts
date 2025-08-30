@@ -16,11 +16,10 @@ export interface CafeResult {
   lng?: number;
 }
 
-export const useCafeSearch = () => {
+export const useCafeSearch = (mapCafes?: any[]) => {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<CafeResult[]>([]);
   const { toast } = useToast();
-  const { searchNearbyCafes, searchCafesByName } = useGeoapify();
   const { getUniversityCoordinates } = useUniversities();
 
   const searchCafes = useCallback(async (searchTerm: string, campus?: string) => {
@@ -32,42 +31,48 @@ export const useCafeSearch = () => {
       return;
     }
 
-    if (!campus) {
-      console.error("🔍 [CAFE SEARCH] No campus provided");
-      toast({
-        title: "Campus Required",
-        description: "Campus information is needed to search cafes.",
-        variant: "destructive"
-      });
-      setResults([]);
-      return;
-    }
-
     setIsLoading(true);
     
     try {
-      // Get campus coordinates for GEOAPIFY search
-      const campusCoords = getUniversityCoordinates(campus);
-      if (!campusCoords) {
-        console.error("🔍 [CAFE SEARCH] Could not get coordinates for campus:", campus);
-        setResults([]);
+      // Use the same cafe data that's already loaded by the map
+      if (mapCafes && mapCafes.length > 0) {
+        console.log("🔍 [CAFE SEARCH] Using existing map data:", mapCafes.length, "cafes");
+        
+        // Filter map cafes by search term and campus
+        const filteredCafes = mapCafes
+          .filter(cafe => {
+            const nameMatch = cafe.name.toLowerCase().includes(searchTerm.toLowerCase());
+            const campusMatch = !campus || cafe.campus === campus;
+            return nameMatch && campusMatch;
+          })
+          .slice(0, 8)
+          .map(cafe => ({
+            id: cafe.id || '',
+            name: cafe.name,
+            address: cafe.address || cafe.vicinity,
+            campus: cafe.campus,
+            geoapify_place_id: cafe.geoapify_place_id || cafe.place_id,
+            lat: cafe.lat || cafe.latitude,
+            lng: cafe.lng || cafe.longitude
+          }));
+
+        console.log("🔍 [CAFE SEARCH] Filtered results from map data:", filteredCafes.length);
+        setResults(filteredCafes);
         return;
       }
 
-      console.log("🔍 [CAFE SEARCH] Using campus coordinates:", campusCoords);
-
-      // Step 1: Search database for existing cafes
+      // Fallback: Search database directly if no map data available
+      console.log("🔍 [CAFE SEARCH] No map data available, searching database...");
       let query = supabase
         .from('cafes')
-        .select('id, name, address, campus, geoapify_place_id, lat, lng')
+        .select('id, name, address, campus, lat, lng')
         .ilike('name', `%${searchTerm}%`)
-        .limit(5);
+        .limit(8);
 
       if (campus) {
         query = query.eq('campus', campus);
       }
 
-      console.log("🔍 [CAFE SEARCH] Executing Supabase query...");
       const { data: dbResults, error } = await query.order('name');
 
       if (error) {
@@ -75,45 +80,22 @@ export const useCafeSearch = () => {
         throw error;
       }
 
-      console.log("🔍 [CAFE SEARCH] Database results:", dbResults?.length || 0);
-
-      // Step 2: Search GEOAPIFY for nearby cafes (using same logic as map)
-      console.log("🔍 [CAFE SEARCH] Searching GEOAPIFY for nearby cafes...");
-      const geoapifyResults = await searchCafesByName(searchTerm, campusCoords.lat, campusCoords.lng);
-      
-      console.log("🔍 [CAFE SEARCH] GEOAPIFY results:", geoapifyResults.length);
-
-      // Step 3: Transform GEOAPIFY results to CafeResult format
-      const transformedGeoapifyResults: CafeResult[] = geoapifyResults.map(place => ({
-        id: '', // Empty ID means new cafe
-        name: place.name,
-        address: place.vicinity || place.address,
-        campus: campus,
-        geoapify_place_id: place.geoapify_place_id || place.place_id,
-        lat: place.latitude || place.lat,
-        lng: place.longitude || place.lng
-      }));
-
-      // Step 4: Convert database results to CafeResult format
-      const transformedDbResults: CafeResult[] = (dbResults || []).map(cafe => ({
-        ...cafe,
+      const transformedResults: CafeResult[] = (dbResults || []).map(cafe => ({
+        id: cafe.id || '',
+        name: cafe.name || '',
         address: cafe.address || undefined,
-        campus: cafe.campus || undefined
+        campus: cafe.campus || undefined,
+        lat: cafe.lat || undefined,
+        lng: cafe.lng || undefined
       }));
 
-      // Step 5: Combine and deduplicate results (prioritize database entries)
-      const allResults = [...transformedDbResults, ...transformedGeoapifyResults];
-      const uniqueResults = allResults.filter((cafe, index, arr) => 
-        arr.findIndex(c => c.name.toLowerCase() === cafe.name.toLowerCase()) === index
-      ).slice(0, 8); // Limit to top 8 results
-      
-      console.log("🔍 [CAFE SEARCH] Combined unique results:", uniqueResults.length, "cafes found");
-      setResults(uniqueResults);
+      console.log("🔍 [CAFE SEARCH] Database fallback results:", transformedResults.length);
+      setResults(transformedResults);
 
     } catch (error: any) {
       console.error('🔍 [CAFE SEARCH] Search error:', error);
       toast({
-        title: "Search Error",
+        title: "Search Error", 
         description: "Failed to search cafes. Please try again.",
         variant: "destructive"
       });
@@ -121,7 +103,7 @@ export const useCafeSearch = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, getUniversityCoordinates, searchCafesByName]);
+  }, [toast, mapCafes]);
 
   // Function removed - using GEOAPIFY instead
 

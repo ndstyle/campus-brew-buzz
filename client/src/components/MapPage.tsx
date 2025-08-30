@@ -25,9 +25,10 @@ interface Cafe {
 
 interface MapPageProps {
   onAddReview: (cafe?: Cafe) => void;
+  onCafesLoaded?: (cafes: any[]) => void;
 }
 
-export const MapPage: React.FC<MapPageProps> = ({ onAddReview }) => {
+export const MapPage: React.FC<MapPageProps> = ({ onAddReview, onCafesLoaded }) => {
   const [selectedCafe, setSelectedCafe] = useState<Cafe | null>(null);
   const [reviewingCafe, setReviewingCafe] = useState<Cafe | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
@@ -77,6 +78,14 @@ export const MapPage: React.FC<MapPageProps> = ({ onAddReview }) => {
       mounted = false;
     };
   }, [campusLoading, userCampus]);
+
+  // Pass cafes to parent when they're loaded
+  useEffect(() => {
+    if (cafes && cafes.length > 0 && onCafesLoaded) {
+      console.log('🎯 MapPage: Passing cafes to parent:', cafes.length);
+      onCafesLoaded(cafes);
+    }
+  }, [cafes, onCafesLoaded]);
 
   const handleCafeClick = useCallback((cafe: Cafe) => {
     console.log('🎯 MapPage: Cafe clicked:', cafe.name);

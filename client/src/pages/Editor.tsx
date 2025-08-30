@@ -18,9 +18,10 @@ interface EditorProps {
   onBack?: () => void;
   onReviewSubmitted?: () => void;
   prefilledCafe?: CafeResult | null; // Autofill cafe from map selection
+  mapCafes?: any[]; // Pass map cafes for search
 }
 
-const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
+const Editor = ({ onBack, onReviewSubmitted, prefilledCafe, mapCafes }: EditorProps) => {
   const [step, setStep] = useState<'search' | 'review'>(prefilledCafe ? 'review' : 'search');
   const [selectedCafe, setSelectedCafe] = useState<CafeResult | null>(prefilledCafe || null);
   const [rating, setRating] = useState([7]);
@@ -239,6 +240,7 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
         onAddNewCafe={handleAddNewCafe}
         onBack={onBack}
         campus={campus || undefined}
+        mapCafes={mapCafes}
       />
     );
   }
@@ -251,6 +253,7 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
         onAddNewCafe={handleAddNewCafe}
         onBack={onBack}
         campus={campus || undefined}
+        mapCafes={mapCafes}
       />
     );
   }
