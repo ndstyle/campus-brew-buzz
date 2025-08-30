@@ -128,8 +128,8 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
       notes: reviewText.trim(),
       photoUrl: uploadedPhotoUrl || undefined,
       googlePlaceId: sanitizedCafe.google_place_id, // Pass Google Places ID separately
-      // Include cafe details for creation if cafe doesn't exist in database
-      cafeDetails: !sanitizedCafe.id ? {
+      // Include cafe details for creation if cafe doesn't exist in database (empty ID)
+      cafeDetails: !sanitizedCafe.id || sanitizedCafe.id.startsWith('custom-') ? {
         name: sanitizedCafe.name,
         address: sanitizedCafe.address || (selectedCafe as any).vicinity || 'Unknown Address',
         campus: sanitizedCafe.campus || campus || 'Unknown Campus',
@@ -189,10 +189,11 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
 
   const handleAddNewCafe = (cafeName: string) => {
     console.log("➕ [EDITOR] Adding new cafe:", cafeName);
-    // Create a temporary cafe object for new cafes
+    // Create a temporary cafe object for new cafes (no ID means it will be created in database)
     const newCafe: CafeResult = {
-      id: `custom-${Date.now()}`,
+      id: "", // Empty ID signals this needs to be created in database
       name: cafeName,
+      campus: campus || 'Unknown Campus'
     };
     console.log("✅ [EDITOR] New cafe created:", newCafe);
     setSelectedCafe(newCafe);

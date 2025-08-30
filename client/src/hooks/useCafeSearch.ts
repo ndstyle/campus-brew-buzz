@@ -76,17 +76,21 @@ export const useCafeSearch = () => {
       console.log("🔍 [CAFE SEARCH] Supabase results:", data);
       console.log("🔍 [CAFE SEARCH] Results count:", data?.length || 0);
 
-      // If no results from database, try to search Google Places
-      if (!data || data.length === 0) {
-        console.log("🔍 [CAFE SEARCH] No database results, searching Google Places...");
-        
-        const googlePlacesResults = await searchGooglePlaces(searchTerm, campus);
-        if (googlePlacesResults.length > 0) {
-          console.log("🔍 [CAFE SEARCH] Found", googlePlacesResults.length, "results from Google Places");
-          setResults(googlePlacesResults);
-          return;
-        }
-      }
+      // Always search Google Places to show real cafes near university
+      console.log("🔍 [CAFE SEARCH] Searching Google Places for real cafes near campus...");
+      const googlePlacesResults = await searchGooglePlaces(searchTerm, campus);
+      
+      // Combine database and Google Places results, prioritizing database matches
+      const allResults = [...(data || []), ...googlePlacesResults];
+      
+      // Remove duplicates based on name (prioritize database entries)
+      const uniqueResults = allResults.filter((cafe, index, arr) => 
+        arr.findIndex(c => c.name.toLowerCase() === cafe.name.toLowerCase()) === index
+      ).slice(0, 8); // Limit to top 8 results
+      
+      console.log("🔍 [CAFE SEARCH] Combined results:", uniqueResults.length, "cafes found");
+      setResults(uniqueResults);
+      return;
 
       // Convert null values to undefined to match CafeResult interface
       const sanitizedData = (data || []).map(cafe => ({

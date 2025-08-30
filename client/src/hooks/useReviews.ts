@@ -77,7 +77,8 @@ export const useReviews = () => {
       let cafeId = reviewData.cafeId;
 
       // Handle cafe creation/retrieval with SELECT-then-INSERT pattern
-      if (!cafeId && reviewData.cafeDetails) {
+      // Check if cafeId is empty, null, undefined, or starts with 'custom-'
+      if ((!cafeId || cafeId.startsWith('custom-')) && reviewData.cafeDetails) {
         console.log('🏪 [SUBMIT REVIEW] Processing cafe (create or get existing):', reviewData.cafeDetails);
         
         // Validate google_place_id exists
@@ -157,6 +158,11 @@ export const useReviews = () => {
           cafeDetails: reviewData.cafeDetails 
         });
         throw new Error('No cafe ID available for review submission - missing cafe data');
+      }
+
+      // Skip checking for existing review if this is a UUID validation error candidate
+      if (cafeId.startsWith('custom-')) {
+        throw new Error('Invalid cafe ID format - cafe creation may have failed');
       }
 
       // Submit the review with upsert (replaces existing review for same user/cafe)
