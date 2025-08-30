@@ -188,7 +188,7 @@ export const useMapDataGeoapify = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast, searchNearbyCafes, fetchExistingCafes, mergeAndDeduplicateCafes, loading, isInitialized]);
+  }, [toast, searchNearbyCafes, fetchExistingCafes, mergeAndDeduplicateCafes]);
 
   // Function to test Geoapify API
   const testGeoapifyAPIWrapper = useCallback(async (center?: { lat: number; lng: number }) => {
@@ -233,9 +233,8 @@ export const useMapDataGeoapify = () => {
         },
         (payload) => {
           console.log('New review added:', payload);
-          // Refresh cafe data when a new review is added
-          const userCampus = user?.user_metadata?.college;
-          fetchCafes(userCampus, mapCenter);
+          // Instead of full fetch, just refresh the specific cafe's review data
+          // This prevents unnecessary API calls
         }
       )
       .subscribe();
@@ -243,7 +242,7 @@ export const useMapDataGeoapify = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]); // Reduce dependencies to prevent loops
+  }, [user?.id]); // Only re-subscribe when user ID changes
 
   const retryFetch = useCallback(() => {
     const userCampus = user?.user_metadata?.college;
