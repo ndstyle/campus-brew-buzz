@@ -81,10 +81,8 @@ export const useReviews = () => {
       if ((!cafeId || cafeId.startsWith('custom-')) && reviewData.cafeDetails) {
         console.log('🏪 [SUBMIT REVIEW] Processing cafe (create or get existing):', reviewData.cafeDetails);
         
-        // Validate google_place_id exists
-        if (!reviewData.cafeDetails.google_place_id) {
-          throw new Error('Missing google_place_id for cafe creation');
-        }
+        // Allow cafe creation without google_place_id for manual entries
+        console.log('🏪 [SUBMIT REVIEW] Creating cafe with manual entry (no Google Places ID required)');
 
         // First, try to find existing cafe by google_place_id
         console.log('🔍 [SUBMIT REVIEW] Searching for existing cafe with google_place_id:', reviewData.cafeDetails.google_place_id);
