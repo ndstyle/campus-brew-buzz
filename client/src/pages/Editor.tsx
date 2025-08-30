@@ -238,6 +238,18 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
     );
   }
 
+  // Redirect to search if no cafe is selected
+  if (!selectedCafe) {
+    return (
+      <CafeSearchAutocomplete
+        onCafeSelected={handleCafeSelected}
+        onAddNewCafe={handleAddNewCafe}
+        onBack={onBack}
+        campus={campus || undefined}
+      />
+    );
+  }
+
   // Show review form after cafe is selected
   return (
     <div className="mobile-container bg-background min-h-screen">
@@ -265,15 +277,38 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
         {/* Selected Cafe Display */}
         <Card className="p-4 mb-6">
           <h2 className="text-lg font-semibold text-foreground mb-3">Selected Cafe</h2>
-          <div className="flex items-center space-x-3">
-            <MapPin className="w-5 h-5 text-muted-foreground" />
-            <div>
-              <h3 className="font-medium text-foreground">{selectedCafe?.name}</h3>
-              {selectedCafe?.address && (
-                <p className="text-sm text-muted-foreground">{selectedCafe.address}</p>
-              )}
+          {selectedCafe ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <MapPin className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <h3 className="font-medium text-foreground">{selectedCafe.name}</h3>
+                  {selectedCafe.address && (
+                    <p className="text-sm text-muted-foreground">{selectedCafe.address}</p>
+                  )}
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleBackToSearch}
+                disabled={isSubmitting}
+              >
+                Change
+              </Button>
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-muted-foreground mb-3">No cafe selected</p>
+              <Button 
+                variant="outline" 
+                onClick={handleBackToSearch}
+                disabled={isSubmitting}
+              >
+                Select a Cafe
+              </Button>
+            </div>
+          )}
         </Card>
 
         {/* Rating */}
