@@ -88,7 +88,13 @@ export const useCafeSearch = () => {
         }
       }
 
-      setResults(data || []);
+      // Convert null values to undefined to match CafeResult interface
+      const sanitizedData = (data || []).map(cafe => ({
+        ...cafe,
+        address: cafe.address || undefined,
+        campus: cafe.campus || undefined
+      }));
+      setResults(sanitizedData);
     } catch (error: any) {
       console.error('🔍 [CAFE SEARCH] Search error:', error);
       toast({

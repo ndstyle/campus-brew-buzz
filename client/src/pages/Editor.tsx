@@ -52,7 +52,12 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
       console.log('🎯 [EDITOR] Transformed cafe data:', transformedCafe);
       
       // Update the selected cafe if there were any transformations
-      if (JSON.stringify(transformedCafe) !== JSON.stringify(prefilledCafe)) {
+      // Use shallow comparison instead of JSON.stringify to avoid circular reference issues
+      const hasChanges = transformedCafe.google_place_id !== prefilledCafe.google_place_id ||
+                        transformedCafe.address !== prefilledCafe.address ||
+                        transformedCafe.campus !== prefilledCafe.campus;
+      
+      if (hasChanges) {
         setSelectedCafe(transformedCafe);
       }
     }
@@ -107,19 +112,28 @@ const Editor = ({ onBack, onReviewSubmitted, prefilledCafe }: EditorProps) => {
     console.log("🔍 ID type:", typeof selectedCafe.id);
     console.log("🔍 Google Places ID type:", typeof selectedCafe.google_place_id);
 
+    // Sanitize cafe data to ensure only serializable values are included
+    const sanitizedCafe = {
+      id: selectedCafe.id,
+      name: selectedCafe.name,
+      address: selectedCafe.address,
+      campus: selectedCafe.campus,
+      google_place_id: selectedCafe.google_place_id
+    };
+
     const reviewData: ReviewSubmission = {
-      cafeId: selectedCafe.id, // Use the UUID for database operations if exists
-      cafeName: selectedCafe.name,
+      cafeId: sanitizedCafe.id, // Use the UUID for database operations if exists
+      cafeName: sanitizedCafe.name,
       rating: rating[0], // Keep exact decimal value (1-10, step 0.1)
       notes: reviewText.trim(),
       photoUrl: uploadedPhotoUrl || undefined,
-      googlePlaceId: selectedCafe.google_place_id, // Pass Google Places ID separately
+      googlePlaceId: sanitizedCafe.google_place_id, // Pass Google Places ID separately
       // Include cafe details for creation if cafe doesn't exist in database
-      cafeDetails: !selectedCafe.id ? {
-        name: selectedCafe.name,
-        address: selectedCafe.address || (selectedCafe as any).vicinity || 'Unknown Address',
-        campus: selectedCafe.campus || campus || 'Unknown Campus',
-        google_place_id: selectedCafe.google_place_id || (selectedCafe as any).place_id,
+      cafeDetails: !sanitizedCafe.id ? {
+        name: sanitizedCafe.name,
+        address: sanitizedCafe.address || (selectedCafe as any).vicinity || 'Unknown Address',
+        campus: sanitizedCafe.campus || campus || 'Unknown Campus',
+        google_place_id: sanitizedCafe.google_place_id || (selectedCafe as any).place_id,
         lat: (selectedCafe as any).lat || (selectedCafe as any).geometry?.location?.lat,
         lng: (selectedCafe as any).lng || (selectedCafe as any).geometry?.location?.lng
       } : undefined
