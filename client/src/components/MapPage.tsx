@@ -253,7 +253,7 @@ export const MapPage: React.FC<MapPageProps> = ({ onAddReview, onCafesLoaded }) 
           />
 
           {/* Recently Rated Cafes - Bottom Sheet */}
-          <div className="absolute bottom-0 left-0 right-0 z-20 p-4 pb-24">
+          <div className="absolute bottom-0 left-0 right-0 z-20 p-4 pb-nav-safe pb-safe-bottom">
             <Card className="glass-card social-floating" data-testid="card-recent-cafes">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-3">
