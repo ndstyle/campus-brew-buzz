@@ -128,8 +128,24 @@ export const MapPage: React.FC<MapPageProps> = ({ onAddReview, onCafesLoaded }) 
     onAddReview(cafe);
   }, [onAddReview]);
 
-  const handleSubmitReview = useCallback((review: { rating: number; text: string }) => {
-    console.log('Submitting review:', review, 'for cafe:', reviewingCafe?.name);
+  const handleSubmitReview = useCallback((review: { 
+    rating: number; 
+    text: string; 
+    isPublic: boolean; 
+    shareToFeed: boolean; 
+    taggedFriends: string[] 
+  }) => {
+    console.log('🎉 [SOCIAL REVIEW] Submitting social review:', {
+      rating: review.rating,
+      text: review.text,
+      isPublic: review.isPublic,
+      shareToFeed: review.shareToFeed,
+      taggedFriends: review.taggedFriends,
+      cafe: reviewingCafe?.name
+    });
+    
+    // TODO: Integrate with actual review submission system
+    // For now, we'll just log the social review data
     setReviewingCafe(null);
   }, [reviewingCafe]);
 
