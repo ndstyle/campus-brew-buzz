@@ -10,6 +10,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { format } from "date-fns";
 import { ProfileEdit } from "@/components/ProfileEdit";
 import { UserPreferences } from "@/components/UserPreferences";
+import { FollowersModal } from "@/components/FollowersModal";
 
 interface ProfilePageProps {
   userId?: string; // If provided, show another user's profile; otherwise show current user
@@ -22,6 +23,8 @@ const ProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowingClick }
   const { profile, followStats, loading, isCurrentUser, toggleFollow } = useUserProfile(userId);
   const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
+  const [followersModalTab, setFollowersModalTab] = useState<'followers' | 'following'>('followers');
 
   const getDisplayName = () => {
     if (!profile) return "";
@@ -166,7 +169,12 @@ const ProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowingClick }
         <div className="flex justify-center space-x-8">
           <button 
             className="text-center space-y-1 hover:bg-muted/50 rounded-lg p-2 transition-colors"
-            onClick={onFollowersClick}
+            onClick={() => {
+              setFollowersModalTab('followers');
+              setIsFollowersModalOpen(true);
+              onFollowersClick?.();
+            }}
+            data-testid="button-followers"
           >
             <div className="text-xl font-bold">{followStats?.followers_count || 0}</div>
             <div className="text-sm text-muted-foreground">Followers</div>
@@ -174,7 +182,12 @@ const ProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowingClick }
           
           <button 
             className="text-center space-y-1 hover:bg-muted/50 rounded-lg p-2 transition-colors"
-            onClick={onFollowingClick}
+            onClick={() => {
+              setFollowersModalTab('following');
+              setIsFollowersModalOpen(true);
+              onFollowingClick?.();
+            }}
+            data-testid="button-following"
           >
             <div className="text-xl font-bold">{followStats?.following_count || 0}</div>
             <div className="text-sm text-muted-foreground">Following</div>
@@ -300,6 +313,16 @@ const ProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowingClick }
           <UserPreferences onSuccess={() => setIsSettingsOpen(false)} />
         </DialogContent>
       </Dialog>
+
+      {/* Followers Modal */}
+      {profile && (
+        <FollowersModal
+          isOpen={isFollowersModalOpen}
+          onClose={() => setIsFollowersModalOpen(false)}
+          userId={profile.id}
+          initialTab={followersModalTab}
+        />
+      )}
     </div>
   );
 };

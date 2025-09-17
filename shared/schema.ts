@@ -47,6 +47,13 @@ export const userPreferences = pgTable("user_preferences", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
+export const follows = pgTable("follows", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  follower_id: varchar("follower_id").notNull().references(() => users.id),
+  followee_id: varchar("followee_id").notNull().references(() => users.id),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   created_at: true,
@@ -68,6 +75,11 @@ export const insertUserPreferencesSchema = createInsertSchema(userPreferences).o
   updated_at: true,
 });
 
+export const insertFollowSchema = createInsertSchema(follows).omit({
+  id: true,
+  created_at: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertCafe = z.infer<typeof insertCafeSchema>;
@@ -76,3 +88,5 @@ export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type Review = typeof reviews.$inferSelect;
 export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
 export type UserPreferences = typeof userPreferences.$inferSelect;
+export type InsertFollow = z.infer<typeof insertFollowSchema>;
+export type Follow = typeof follows.$inferSelect;
