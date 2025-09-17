@@ -31,7 +31,7 @@ export const cafes = pgTable("cafes", {
 export const reviews = pgTable("reviews", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   cafe_id: varchar("cafe_id").notNull().references(() => cafes.id),
-  user_id: varchar("user_id").notNull(),
+  user_id: varchar("user_id").notNull().references(() => users.id),
   rating: integer("rating").notNull(),
   blurb: text("blurb"),
   photo_url: text("photo_url"),
@@ -51,6 +51,29 @@ export const follows = pgTable("follows", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   follower_id: varchar("follower_id").notNull().references(() => users.id),
   followee_id: varchar("followee_id").notNull().references(() => users.id),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+export const userFavorites = pgTable("user_favorites", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  user_id: varchar("user_id").notNull().references(() => users.id),
+  item_name: text("item_name").notNull(),
+  item_type: text("item_type").notNull(), // 'coffee' or 'food'
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+export const sharedCafes = pgTable("shared_cafes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  user_id: varchar("user_id").notNull().references(() => users.id),
+  cafe_id: varchar("cafe_id").notNull().references(() => cafes.id),
+  caption: text("caption"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+export const likes = pgTable("likes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  user_id: varchar("user_id").notNull().references(() => users.id),
+  shared_cafe_id: varchar("shared_cafe_id").notNull().references(() => sharedCafes.id),
   created_at: timestamp("created_at").defaultNow(),
 });
 
@@ -80,6 +103,21 @@ export const insertFollowSchema = createInsertSchema(follows).omit({
   created_at: true,
 });
 
+export const insertUserFavoriteSchema = createInsertSchema(userFavorites).omit({
+  id: true,
+  created_at: true,
+});
+
+export const insertSharedCafeSchema = createInsertSchema(sharedCafes).omit({
+  id: true,
+  created_at: true,
+});
+
+export const insertLikeSchema = createInsertSchema(likes).omit({
+  id: true,
+  created_at: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertCafe = z.infer<typeof insertCafeSchema>;
@@ -90,3 +128,9 @@ export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
 export type UserPreferences = typeof userPreferences.$inferSelect;
 export type InsertFollow = z.infer<typeof insertFollowSchema>;
 export type Follow = typeof follows.$inferSelect;
+export type InsertUserFavorite = z.infer<typeof insertUserFavoriteSchema>;
+export type UserFavorite = typeof userFavorites.$inferSelect;
+export type InsertSharedCafe = z.infer<typeof insertSharedCafeSchema>;
+export type SharedCafe = typeof sharedCafes.$inferSelect;
+export type InsertLike = z.infer<typeof insertLikeSchema>;
+export type Like = typeof likes.$inferSelect;
