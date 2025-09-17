@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Like {
   id: string;
@@ -17,11 +18,12 @@ export const useLikes = () => {
   const [likes, setLikes] = useState<Like[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const fetchLikes = async () => {
     try {
-      // For MVP, use localStorage to store likes
-      // In production, this would connect to Supabase tables
+      setLoading(true);
+      // Enhanced localStorage implementation for better persistence
       const storedLikes = localStorage.getItem('cafe_likes');
       
       if (storedLikes) {
@@ -43,8 +45,8 @@ export const useLikes = () => {
 
   const getLikeStats = (sharedCafeId: string): LikeStats => {
     const cafeLikes = likes.filter(like => like.shared_cafe_id === sharedCafeId);
-    const currentUserId = 'current_user'; // For MVP, using mock user ID
-    const isLiked = cafeLikes.some(like => like.user_id === currentUserId);
+    const currentUserId = user?.id;
+    const isLiked = currentUserId ? cafeLikes.some(like => like.user_id === currentUserId) : false;
     
     return {
       count: cafeLikes.length,
@@ -53,8 +55,17 @@ export const useLikes = () => {
   };
 
   const toggleLike = async (sharedCafeId: string) => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be signed in to like posts",
+        variant: "destructive",
+      });
+      return null;
+    }
+
     try {
-      const currentUserId = 'current_user'; // For MVP
+      const currentUserId = user.id;
       const existingLike = likes.find(
         like => like.shared_cafe_id === sharedCafeId && like.user_id === currentUserId
       );
@@ -83,17 +94,16 @@ export const useLikes = () => {
         });
       }
 
+      // Update state and persist to localStorage
       setLikes(updatedLikes);
-      
-      // Store in localStorage for MVP
       localStorage.setItem('cafe_likes', JSON.stringify(updatedLikes));
       
       return !existingLike; // Return new like status
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error toggling like:', error);
       toast({
         title: "Error",
-        description: "Failed to update like",
+        description: error.message || "Failed to update like",
         variant: "destructive",
       });
       return null;
@@ -101,7 +111,9 @@ export const useLikes = () => {
   };
 
   const getLikedCafes = () => {
-    const currentUserId = 'current_user';
+    const currentUserId = user?.id;
+    if (!currentUserId) return [];
+    
     return likes
       .filter(like => like.user_id === currentUserId)
       .map(like => like.shared_cafe_id);
