@@ -1,0 +1,69 @@
+1. Profile Editing
+Create a component that allows users to edit their username, first name, last name, and email. This component will interact with Supabase to update user details.
+
+import React, { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+const ProfileEdit: React.FC<{ userId: string }> = ({ userId }) => {
+   const [username, setUsername] = useState('');
+   const [fullName, setFullName] = useState('');
+   const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      const { data, error } = await supabase
+         .from('users')
+         .update({ username, full_name: fullName })
+         .eq('id', userId);
+      if (error) {
+         console.error('Error updating profile:', error);
+      } else {
+         console.log('Profile updated:', data);
+      }
+   };
+   return (
+      <form onSubmit={handleSubmit}>
+         <input 
+            type="text" 
+            placeholder="Username" 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
+            required 
+         />
+         <input 
+            type="text" 
+            placeholder="Full Name" 
+            value={fullName} 
+            onChange={(e) => setFullName(e.target.value)} 
+            required 
+         />
+         <button type="submit">Save Changes</button>
+      </form>
+   );
+};
+export default ProfileEdit;
+2. Social Features
+Implement functions to follow and unfollow other users and display lists of followers and followed users.
+
+import { supabase } from '@/integrations/supabase/client';
+export const useFollowUser = () => {
+   const followUser = async (userIdToFollow: string) => {
+      const { user } = await supabase.auth.getUser();
+      if (user) {
+         const { data, error } = await supabase
+            .from('follows')
+            .insert([{ follower_id: user.id, following_id: userIdToFollow }]);
+         if (error) console.error('Error following user:', error);
+         return data;
+      }
+   };
+   const unfollowUser = async (userIdToUnfollow: string) => {
+      const { user } = await supabase.auth.getUser();
+      if (user) {
+         const { data, error } = await supabase
+            .from('follows')
+            .delete()
+            .match({ follower_id: user.id, following_id: userIdToUnfollow });
+         if (error) console.error('Error unfollowing user:', error);
+         return data;
+      }
+   };
+   return { followUser, unfollowUser };
+};
