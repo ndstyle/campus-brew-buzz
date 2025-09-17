@@ -84,14 +84,15 @@ export const useReviews = () => {
         // Allow cafe creation without geoapify_place_id for manual entries
         console.log('🏪 [SUBMIT REVIEW] Creating cafe with manual entry (no GEOAPIFY Place ID required)');
 
-        // First, try to find existing cafe by geoapify_place_id if available
-        if (reviewData.cafeDetails.geoapify_place_id) {
-          console.log('🔍 [SUBMIT REVIEW] Searching for existing cafe with geoapify_place_id:', reviewData.cafeDetails.geoapify_place_id);
+        // Try to find existing cafe by name and address since geoapify_place_id is not available in this database
+        if (reviewData.cafeDetails.name && reviewData.cafeDetails.address) {
+          console.log('🔍 [SUBMIT REVIEW] Searching for existing cafe by name and address:', reviewData.cafeDetails.name, reviewData.cafeDetails.address);
         
           const { data: existingCafe, error: findError } = await supabase
             .from('cafes')
             .select('id')
-            .eq('geoapify_place_id', reviewData.cafeDetails.geoapify_place_id)
+            .eq('name', reviewData.cafeDetails.name)
+            .eq('address', reviewData.cafeDetails.address)
             .single();
 
           if (findError && findError.code !== 'PGRST116') { // PGRST116 = no rows found
@@ -107,7 +108,7 @@ export const useReviews = () => {
             console.log('🏪 [SUBMIT REVIEW] No existing cafe found, will create new one');
           }
         } else {
-          console.log('🏪 [SUBMIT REVIEW] No GEOAPIFY Place ID provided, will create new cafe without it');
+          console.log('🏪 [SUBMIT REVIEW] Insufficient data to search for existing cafe, will create new one');
         }
 
         if (!cafeId) {
@@ -120,7 +121,6 @@ export const useReviews = () => {
               name: reviewData.cafeDetails.name,
               address: reviewData.cafeDetails.address || null,
               campus: reviewData.cafeDetails.campus || null,
-              geoapify_place_id: reviewData.cafeDetails.geoapify_place_id || null,
               lat: reviewData.cafeDetails.lat || null,
               lng: reviewData.cafeDetails.lng || null
             }])
@@ -131,13 +131,14 @@ export const useReviews = () => {
             console.error('❌ [SUBMIT REVIEW] Error creating new cafe:', cafeError);
             
             // If it's a duplicate key error, try to find the existing cafe again
-            if (cafeError.code === '23505' && reviewData.cafeDetails.geoapify_place_id) { // PostgreSQL unique constraint violation
+            if (cafeError.code === '23505' && reviewData.cafeDetails.name && reviewData.cafeDetails.address) { // PostgreSQL unique constraint violation
               console.log('🔄 [SUBMIT REVIEW] Duplicate key detected, trying to find existing cafe again...');
               
               const { data: retryExistingCafe, error: retryError } = await supabase
                 .from('cafes')
                 .select('id')
-                .eq('geoapify_place_id', reviewData.cafeDetails.geoapify_place_id!)
+                .eq('name', reviewData.cafeDetails.name)
+                .eq('address', reviewData.cafeDetails.address)
                 .single();
               
               if (retryError) {
