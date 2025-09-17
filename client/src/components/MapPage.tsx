@@ -159,24 +159,22 @@ export const MapPage: React.FC<MapPageProps> = ({ onAddReview, onCafesLoaded }) 
 
   if (isLoading || campusLoading) {
     return (
-      <div className="mobile-container bg-background min-h-screen">
-        <div className="mobile-safe-area flex items-center justify-center h-full">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground text-sm">finding cafes near you...</p>
-          </div>
+      <div className="map-page-container">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground text-sm">finding cafes near you...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mobile-container bg-background pb-20 min-h-screen">
+    <div className="map-page-container">
       {/* Full-Screen Map */}
       {userLocation ? (
-        <div className="relative h-screen">
+        <div className="map-content-wrapper">
           {/* Social Search Overlay - Top */}
-          <div className="absolute top-0 left-0 right-0 z-20 p-4 space-y-4">
+          <div className="absolute top-0 left-0 right-0 z-20 p-4 pt-safe-top space-y-4">
             {/* Search Bar with Social Elements */}
             <div className="glass-card rounded-xl p-4 social-floating">
               <div className="relative">
@@ -255,7 +253,7 @@ export const MapPage: React.FC<MapPageProps> = ({ onAddReview, onCafesLoaded }) 
           />
 
           {/* Recently Rated Cafes - Bottom Sheet */}
-          <div className="absolute bottom-0 left-0 right-0 z-20 p-4">
+          <div className="absolute bottom-0 left-0 right-0 z-20 p-4 pb-24">
             <Card className="glass-card social-floating" data-testid="card-recent-cafes">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -331,7 +329,7 @@ export const MapPage: React.FC<MapPageProps> = ({ onAddReview, onCafesLoaded }) 
           </div>
         </div>
       ) : (
-        <div className="mobile-safe-area flex items-center justify-center h-full">
+        <div className="map-content-wrapper">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
             <p className="text-muted-foreground">loading map...</p>

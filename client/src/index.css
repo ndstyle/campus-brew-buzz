@@ -33,9 +33,72 @@
   border-radius: 2px;
 }
 
-/* Map container */
+/* Map container - Responsive fullscreen */
 .leaflet-container {
   font-family: inherit !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Safe area handling for all devices */
+.pb-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pt-safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Map page specific styling */
+.map-page-container {
+  width: 100vw;
+  height: 100dvh; /* Dynamic viewport height for better mobile support */
+  min-height: 100vh; /* Fallback for older browsers */
+  background: hsl(var(--background));
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-content-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile responsiveness improvements */
+@media (max-width: 768px) {
+  .mobile-safe-area {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .map-page-container {
+    height: 100dvh; /* Use dynamic viewport on mobile */
+    height: -webkit-fill-available; /* Safari iOS support */
+  }
+}
+
+/* Desktop and tablet responsiveness */
+@media (min-width: 769px) {
+  .map-page-container {
+    height: 100vh; /* Standard viewport on desktop */
+  }
+}
+
+/* iPad specific adjustments */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .glass-card {
+    backdrop-filter: blur(20px) !important;
+  }
+  
+  .map-page-container {
+    height: 100dvh; /* Dynamic viewport for tablets */
+  }
 }
 
 /* Hide leaflet attribution on mobile */
