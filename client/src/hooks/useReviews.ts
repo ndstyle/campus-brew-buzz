@@ -121,6 +121,7 @@ export const useReviews = () => {
               name: reviewData.cafeDetails.name,
               address: reviewData.cafeDetails.address || null,
               campus: reviewData.cafeDetails.campus || null,
+              google_place_id: `manual-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Required field - generate unique placeholder
               lat: reviewData.cafeDetails.lat || null,
               lng: reviewData.cafeDetails.lng || null
             }])
