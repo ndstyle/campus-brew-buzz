@@ -1,0 +1,88 @@
+Profile Sharing:
+
+Create a user profile component that displays the username and up to two favorite coffee orders/foods. The profile should be simple and not customizable for the MVP stage.
+Example code for the UserProfile component in TypeScript using React:
+
+import React from 'react';
+interface UserProfileProps {
+  username: string;
+  favoriteItems: string[];
+}
+const UserProfile: React.FC<UserProfileProps> = ({ username, favoriteItems }) => {
+  return (
+    <div className="user-profile">
+      <h2>{username}'s Profile</h2>
+      <h3>Favorites:</h3>
+      <ul>
+        {favoriteItems.map((item, index) => (
+          <li key={index}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+export default UserProfile;
+Friend Connections:
+
+Implement a simple friend management system allowing users to add/accept friends or follow/unfollow.
+Example code for managing friends:
+
+import { supabase } from '@/integrations/supabase/client';
+export const useFriendManagement = () => {
+  const addFriend = async (friendId: string) => {
+    const { user } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from('friends')
+        .insert([{ user_id: user.id, friend_id: friendId }]);
+    }
+  };
+  const acceptFriendRequest = async (requestId: string) => {
+    // Logic to accept a friend request
+  };
+  const fetchFriends = async () => {
+    const { user } = await supabase.auth.getUser();
+    if (user) {
+      const { data: friends } = await supabase
+        .from('friends')
+        .select('*')
+        .eq('user_id', user.id);
+      return friends;
+    }
+    return [];
+  };
+  return { addFriend, acceptFriendRequest, fetchFriends };
+};
+Cafe Sharing:
+
+Allow users to share cafes with a simple post functionality.
+Example code for sharing a cafe:
+
+import { supabase } from '@/integrations/supabase/client';
+export const useCafeSharing = () => {
+  const shareCafe = async (cafeId: string) => {
+    const { user } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from('shared_cafes')
+        .insert([{ user_id: user.id, cafe_id: cafeId }]);
+    }
+  };
+};
+Likes / Simple Interaction:
+
+Implement a like feature for shared cafes.
+Example code for liking a cafe:
+
+import { supabase } from '@/integrations/supabase/client';
+export const useLikes = () => {
+  const likeCafe = async (sharedCafeId: string) => {
+    const { user } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from('likes')
+        .insert([{ user_id: user.id, shared_cafe_id: sharedCafeId }]);
+    }
+  };
+  return { likeCafe };
+};
