@@ -7,7 +7,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Editor from "./pages/Editor";
-import Preview from "./pages/Preview";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import UserProfile from "./pages/UserProfile";
@@ -26,7 +25,6 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/editor" element={<Editor />} />
-            <Route path="/preview" element={<Preview />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/u/:id" element={<UserProfile />} />
             <Route path="/map" element={<MapPage />} />

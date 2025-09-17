@@ -10,12 +10,11 @@ import ProfilePage from "@/components/ProfilePage";
 import CoffeeShopDetail from "@/components/CoffeeShopDetail";
 import BottomNavigation from "@/components/BottomNavigation";
 import Editor from "@/pages/Editor";
-import Preview from "@/pages/Preview";
 import CampusDebugger from "@/components/CampusDebugger";
 import { useAuth } from "@/contexts/AuthContext";
 
 type AppState = "landing" | "auth" | "signin" | "onboarding" | "app";
-type AppView = "feed" | "leaderboard" | "map" | "search" | "profile" | "editor" | "preview" | "detail";
+type AppView = "feed" | "leaderboard" | "map" | "search" | "profile" | "editor" | "detail";
 
 const Index = () => {
   const [appState, setAppState] = useState<AppState>("landing");
@@ -101,8 +100,8 @@ const Index = () => {
               {currentView === "feed" && (
                 <FeedPage 
                   onReviewClick={(review) => {
-                    setSelectedReview(review);
-                    setCurrentView("preview");
+                    console.log('Review clicked:', review);
+                    // Preview functionality removed
                   }}
                   onAddReview={handleAddReview}
                   refreshTrigger={refreshTrigger}
@@ -127,8 +126,8 @@ const Index = () => {
                 <FeedPage 
                   searchMode={true}
                   onReviewClick={(review) => {
-                    setSelectedReview(review);
-                    setCurrentView("preview");
+                    console.log('Review clicked:', review);
+                    // Preview functionality removed
                   }}
                   onAddReview={handleAddReview}
                   refreshTrigger={refreshTrigger}
@@ -163,12 +162,6 @@ const Index = () => {
                   }}
                   prefilledCafe={selectedCafeForReview} // Pass the selected cafe for autofill
                   mapCafes={mapCafes} // Pass map cafes for search
-                />
-              )}
-              {currentView === "preview" && (
-                <Preview 
-                  review={selectedReview}
-                  onBack={() => setCurrentView(activeTab as AppView)}
                 />
               )}
             </div>
