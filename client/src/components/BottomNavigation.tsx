@@ -15,9 +15,9 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 pb-safe-bottom">
+    <div className="fixed bottom-0 left-0 right-0 z-50 pb-safe">
       {/* Social Template Bottom Navigation */}
-      <div className="glass-card border-t border-white/10 backdrop-blur-xl bg-background/95 w-full">
+      <div className="glass-card border-t border-white/10 backdrop-blur-xl bg-background/95">
         <div className="flex items-center justify-around px-6 py-3 h-20">
           {tabs.map((tab) => {
             const Icon = tab.icon;

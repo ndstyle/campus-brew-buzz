@@ -33,72 +33,9 @@
   border-radius: 2px;
 }
 
-/* Map container - Responsive fullscreen */
+/* Map container */
 .leaflet-container {
   font-family: inherit !important;
-  width: 100% !important;
-  height: 100% !important;
-}
-
-/* Safe area handling for all devices */
-.pb-safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-.pt-safe-top {
-  padding-top: env(safe-area-inset-top);
-}
-
-/* Bottom navigation safe spacing */
-.pb-nav-safe {
-  padding-bottom: calc(5rem + env(safe-area-inset-bottom));
-}
-
-/* Map page specific styling */
-.map-page-container {
-  width: 100vw;
-  min-height: 100vh; /* Fallback for older browsers */
-  height: 100dvh; /* Dynamic viewport height for all devices */
-  background: hsl(var(--background));
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.map-content-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Fallback for browsers that don't support dvh */
-@supports not (height: 100dvh) {
-  .map-page-container {
-    height: 100vh;
-  }
-}
-
-/* Mobile responsiveness improvements */
-@media (max-width: 768px) {
-  .mobile-safe-area {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  
-  .map-page-container {
-    height: -webkit-fill-available; /* Safari iOS support */
-  }
-}
-
-/* Tablet and desktop adjustments */
-@media (min-width: 768px) {
-  .glass-card {
-    backdrop-filter: blur(20px) !important;
-  }
 }
 
 /* Hide leaflet attribution on mobile */
