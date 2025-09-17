@@ -1,11 +1,15 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, UserMinus, Coffee, Calendar, Star, MapPin } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Users, UserPlus, UserMinus, Coffee, Calendar, Star, MapPin, Edit, Settings } from "lucide-react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { format } from "date-fns";
+import { ProfileEdit } from "@/components/ProfileEdit";
+import { UserPreferences } from "@/components/UserPreferences";
 
 interface ProfilePageProps {
   userId?: string; // If provided, show another user's profile; otherwise show current user
@@ -16,6 +20,8 @@ interface ProfilePageProps {
 
 const ProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowingClick }: ProfilePageProps) => {
   const { profile, followStats, loading, isCurrentUser, toggleFollow } = useUserProfile(userId);
+  const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const getDisplayName = () => {
     if (!profile) return "";
@@ -111,6 +117,31 @@ const ProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowingClick }
     <div className="flex flex-col h-full bg-background">
       {/* Profile Header */}
       <div className="p-6 space-y-6">
+        {/* Top Action Buttons - Only show for current user */}
+        {isCurrentUser && (
+          <div className="flex justify-end space-x-2 mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsProfileEditOpen(true)}
+              data-testid="button-edit-profile"
+              className="flex items-center gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              Edit Profile
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsSettingsOpen(true)}
+              data-testid="button-settings"
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </Button>
+          </div>
+        )}
         {/* Avatar and Basic Info */}
         <div className="text-center space-y-4">
           <Avatar className="h-24 w-24 mx-auto">
@@ -249,6 +280,26 @@ const ProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowingClick }
           )}
         </div>
       </div>
+
+      {/* Profile Edit Dialog */}
+      <Dialog open={isProfileEditOpen} onOpenChange={setIsProfileEditOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+          </DialogHeader>
+          <ProfileEdit onSuccess={() => setIsProfileEditOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Settings Dialog */}
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Settings</DialogTitle>
+          </DialogHeader>
+          <UserPreferences onSuccess={() => setIsSettingsOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

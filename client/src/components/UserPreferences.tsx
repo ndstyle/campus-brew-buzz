@@ -28,7 +28,11 @@ interface UserPreference {
   updated_at: string;
 }
 
-export const UserPreferences = () => {
+interface UserPreferencesProps {
+  onSuccess?: () => void;
+}
+
+export const UserPreferences = ({ onSuccess }: UserPreferencesProps = {}) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -141,6 +145,9 @@ export const UserPreferences = () => {
         title: 'Success',
         description: 'Preferences saved successfully',
       });
+
+      // Call onSuccess callback to close dialog
+      onSuccess?.();
     } catch (error: any) {
       console.error('Error saving preferences:', error);
       toast({

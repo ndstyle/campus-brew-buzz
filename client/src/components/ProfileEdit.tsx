@@ -20,7 +20,11 @@ const profileSchema = z.object({
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
-export const ProfileEdit = () => {
+interface ProfileEditProps {
+  onSuccess?: () => void;
+}
+
+export const ProfileEdit = ({ onSuccess }: ProfileEditProps = {}) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -144,6 +148,9 @@ export const ProfileEdit = () => {
         title: 'Success',
         description: 'Profile updated successfully',
       });
+
+      // Call onSuccess callback to close dialog
+      onSuccess?.();
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({
