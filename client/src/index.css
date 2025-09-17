@@ -93,9 +93,16 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* RateUrCoffee Brand Colors - Purple #8B5FBF primary */
-    --primary: 280 42% 55%;
+    /* Social Template Design System - Purple Gradient Theme */
+    --primary: 247 84% 63%;  /* #6366f1 - Modern purple from social template */
+    --primary-secondary: 280 100% 68%; /* #8b5cf6 - Gradient end color */
     --primary-foreground: 0 0% 100%;
+    
+    /* Social Template Gradients & Effects */
+    --primary-gradient: linear-gradient(135deg, hsl(247 84% 63%) 0%, hsl(280 100% 68%) 100%);
+    --card-bg: hsla(0, 0%, 100%, 0.95);
+    --card-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.1);
+    --glassmorphism-blur: blur(10px);
 
     --secondary: 220 20% 96%;
     --secondary-foreground: 280 42% 55%;
@@ -205,6 +212,79 @@ All colors MUST be HSL.
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
     }
+  }
+}
+
+/* Social Template Design System Utilities */
+@layer utilities {
+  /* Primary gradient backgrounds */
+  .bg-gradient-primary {
+    background: var(--primary-gradient);
+  }
+  
+  .bg-gradient-primary-subtle {
+    background: linear-gradient(135deg, hsl(247 84% 97%) 0%, hsl(280 100% 97%) 100%);
+  }
+  
+  /* Glassmorphism cards */
+  .glass-card {
+    background: var(--card-bg);
+    backdrop-filter: var(--glassmorphism-blur);
+    -webkit-backdrop-filter: var(--glassmorphism-blur);
+    box-shadow: var(--card-shadow);
+    border: 1px solid hsla(0, 0%, 100%, 0.2);
+  }
+  
+  /* Social template floating elements */
+  .social-floating {
+    box-shadow: 0 4px 24px hsla(247, 84%, 63%, 0.15);
+    backdrop-filter: var(--glassmorphism-blur);
+    -webkit-backdrop-filter: var(--glassmorphism-blur);
+  }
+  
+  /* Social template button styles */
+  .btn-social-primary {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 16px hsla(247, 84%, 63%, 0.3);
+    transition: all 0.2s ease;
+  }
+  
+  .btn-social-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px hsla(247, 84%, 63%, 0.4);
+  }
+  
+  /* Social template overlay styles */
+  .social-overlay {
+    background: linear-gradient(180deg, transparent 0%, hsla(0, 0%, 0%, 0.4) 100%);
+  }
+  
+  /* Modern card styles */
+  .modern-card {
+    @apply bg-white rounded-2xl shadow-lg border border-gray-100;
+    transition: all 0.2s ease;
+  }
+  
+  .modern-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px hsla(0, 0%, 0%, 0.1);
+  }
+  
+  /* Friend avatar clusters */
+  .avatar-cluster {
+    @apply flex -space-x-2;
+  }
+  
+  .avatar-cluster .avatar {
+    @apply relative border-2 border-white;
+    z-index: 1;
+  }
+  
+  .avatar-cluster .avatar:hover {
+    z-index: 10;
+    transform: scale(1.1);
   }
 }
 

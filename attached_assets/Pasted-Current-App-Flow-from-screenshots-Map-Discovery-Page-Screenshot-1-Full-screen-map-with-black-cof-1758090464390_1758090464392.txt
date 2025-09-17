@@ -1,0 +1,95 @@
+Current App Flow (from screenshots)
+Map Discovery Page (Screenshot 1)
+Full-screen map with black coffee shop markers
+Bottom navigation: Leaderboard | Find Coffee | Add Review (+) | Feed | Profile
+This is the main discovery interface
+Coffee Shop Modal (Screenshot 2)
+Pops up when clicking map markers
+Shows: Name, price/type, address, photo gallery, action buttons (website/call/navigate)
+Purple "Review This Cafe" button
+Scoring system: "rec score" (8.3) and "friend score" (8.2) with circular indicators
+"Popular dishes" section (needs to be coffee-focused)
+Review Submission Flow (Screenshots 3-4)
+"Write Review" page with cafe selection
+Overall rating slider (1-10 scale)
+Category tags: Atmosphere, Coffee Quality, Service, Price, WiFi
+Text review area (500 char limit)
+Photo upload functionality
+"Publish Review" and "Save as Draft" options
+Design Transformation Required
+1. Map Page → Social Discovery Feed
+Current: Basic map with markers
+New: Transform into the social template's middle screen layout:
+Keep the full-screen map but style it to match the social template
+Add social overlay elements:
+Search bar at top: "Search coffee shops, friends, etc."
+Friend counter: "X coffee lovers nearby"
+Overlay the "Recently rated cafes" section at the bottom (like the social template)
+Add category filters: Espresso | Latte | Cold Brew | Specialty (matching social template style)
+Show friend activity on map: Small friend avatars on markers where friends have been
+2. Coffee Shop Modal → Social Venue Detail
+Current: Basic info modal
+New: Transform to match the social template's venue detail screen:
+Keep the modal popup approach but redesign with social template styling
+Header section: Coffee shop name + social metrics ("⭐ 4.2 - 23 friends visited")
+Image gallery: Keep the 3-photo layout but style like social template
+Social proof section: "Friends who visited" with overlapping avatar circles
+Action buttons: Style the website/call/navigate buttons to match template
+Scoring section: Keep rec score + friend score but style as social template cards
+Recent reviews: Replace "popular dishes" with "recent reviews" from friends
+3. Review Flow → Social Review Submission
+Current: Simple review form
+New: Enhanced social review experience:
+Keep all current functionality (rating slider, categories, text, photos)
+Add social elements:
+"Share with friends" toggle
+Tag friends who were with you
+Check-in functionality
+Style to match social template: Purple gradients, card layouts, modern typography
+Key Design Elements to Implement
+Color Scheme & Visual Style
+css
+:root {
+  --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --primary-purple: #6366f1;
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --glassmorphism: backdrop-filter: blur(10px);
+}
+
+Specific Implementation Instructions
+Map Integration
+Keep your current Leaflet map exactly as is
+Add social overlay UI on top of the map:
+Floating search bar
+Bottom sheet with "Recently rated cafes"
+Category filter pills
+Friend activity indicators
+Modal System
+Enhance your current modal popup with social template styling
+Add friend avatars to show who's been to each location
+Style the scoring circles to match the social template
+Keep all current buttons (website/call/navigate) but restyle them
+Review System
+Keep all your current review functionality:
+Rating slider (1-10)
+Category tags (Atmosphere, Coffee Quality, Service, Price, WiFi)
+Text review (500 chars)
+Photo upload
+Publish/Draft options
+Add social enhancements:
+Friend tagging
+Visibility settings
+Share to feed toggle
+Data Adaptations
+Replace "italian, pizza" placeholder with actual coffee shop data
+Change "popular dishes" to "popular drinks" or "signature drinks"
+Ensure all text is coffee-focused rather than restaurant-focused
+Critical Requirements
+Preserve ALL existing functionality - this is just a visual redesign
+Keep the map-based discovery as the core feature
+Maintain your current navigation structure
+Enhance with social features without breaking existing flows
+Apply social template visual design throughout all screens
+Ensure mobile-first responsive design
+The goal is to take your working coffee rating app and give it the polished, social-focused UI from the template while keeping everything that currently works exactly as it is.
