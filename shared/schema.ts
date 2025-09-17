@@ -4,9 +4,13 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  id: varchar("id").primaryKey(), // UUID from Supabase Auth
+  email: text("email"),
+  username: text("username").unique(),
+  first_name: text("first_name"),
+  last_name: text("last_name"),
+  college: text("college"),
+  created_at: timestamp("created_at").defaultNow(),
 });
 
 export const cafes = pgTable("cafes", {
@@ -34,9 +38,18 @@ export const reviews = pgTable("reviews", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const userPreferences = pgTable("user_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  user_id: varchar("user_id").notNull().references(() => users.id).unique(),
+  notifications: boolean("notifications").default(true),
+  preferred_cafes: text("preferred_cafes").array(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  created_at: true,
 });
 
 export const insertCafeSchema = createInsertSchema(cafes).omit({
@@ -49,9 +62,17 @@ export const insertReviewSchema = createInsertSchema(reviews).omit({
   created_at: true,
 });
 
+export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertCafe = z.infer<typeof insertCafeSchema>;
 export type Cafe = typeof cafes.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type Review = typeof reviews.$inferSelect;
+export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+export type UserPreferences = typeof userPreferences.$inferSelect;
