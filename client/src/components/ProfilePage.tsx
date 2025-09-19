@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,7 +21,7 @@ import {
   Edit,
   Settings,
 } from "lucide-react";
-import { useEnhancedUserProfile } from "@/hooks/useEnhancedUserProfile";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { format } from "date-fns";
 import { ProfileEdit } from "@/components/ProfileEdit";
 import { UserPreferences } from "@/components/UserPreferences";
@@ -41,7 +41,7 @@ const ProfilePage = ({
   onFollowingClick,
 }: ProfilePageProps) => {
   const { profile, followStats, loading, isCurrentUser, toggleFollow } =
-    useEnhancedUserProfile(userId);
+    useUserProfile(userId);
   const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
@@ -175,13 +175,9 @@ const ProfilePage = ({
         {/* Avatar and Basic Info */}
         <div className="text-center space-y-4">
           <Avatar className="h-24 w-24 mx-auto">
-            {profile.profilePicture ? (
-              <AvatarImage src={profile.profilePicture} alt="Profile picture" />
-            ) : (
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-2xl">
-                {getAvatarInitials()}
-              </AvatarFallback>
-            )}
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-2xl">
+              {getAvatarInitials()}
+            </AvatarFallback>
           </Avatar>
 
           <div className="space-y-2">
@@ -195,14 +191,6 @@ const ProfilePage = ({
             )}
           </div>
 
-          {/* Bio Section */}
-          {profile.bio && (
-            <div className="max-w-sm mx-auto">
-              <p className="text-sm text-muted-foreground italic">
-                "{profile.bio}"
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Stats Row */}
