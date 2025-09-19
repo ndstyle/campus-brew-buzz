@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Star, Camera, Users, Globe, Lock, Heart, Coffee } from 'lucide-react';
 import { Button } from './ui/button';
 import { Switch } from './ui/switch';
-import { Avatar, AvatarFallback } from './ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
+import { Input } from './ui/input';
+import { Card } from './ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Friend } from '@/types';
 
 interface ReviewModalProps {
   cafe: { id: string; name: string; address: string };
@@ -18,14 +23,63 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmi
   const [shareToFeed, setShareToFeed] = useState(true);
   const [taggedFriends, setTaggedFriends] = useState<string[]>([]);
   const [showFriendTagger, setShowFriendTagger] = useState(false);
+  const [friendSearchQuery, setFriendSearchQuery] = useState('');
+  const [availableFriends, setAvailableFriends] = useState<Friend[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(false);
 
-  // Mock friends for tagging
-  const availableFriends = [
-    { id: '1', name: 'Alex', avatar: 'A' },
-    { id: '2', name: 'Blake', avatar: 'B' },
-    { id: '3', name: 'Casey', avatar: 'C' },
-    { id: '4', name: 'Dana', avatar: 'D' }
-  ];
+  const { user } = useAuth();
+
+  // Load user's friends for tagging
+  useEffect(() => {
+    const loadFriends = async () => {
+      if (!user?.id) return;
+
+      setLoadingFriends(true);
+      try {
+        const { data: followsData, error } = await supabase
+          .from('follows')
+          .select(`
+            followee_id,
+            users!follows_followee_id_fkey(
+              id,
+              username,
+              first_name,
+              last_name,
+              profile_picture
+            )
+          `)
+          .eq('follower_id', user.id);
+
+        if (error) throw error;
+
+        const friends: Friend[] = followsData
+          ?.map((follow: any) => ({
+            id: follow.users.id,
+            name: follow.users.first_name && follow.users.last_name 
+              ? `${follow.users.first_name} ${follow.users.last_name}`
+              : follow.users.username,
+            username: follow.users.username,
+            avatar: follow.users.profile_picture
+          }))
+          .filter(friend => friend.name && friend.username) || [];
+
+        setAvailableFriends(friends);
+      } catch (error) {
+        console.error('Error loading friends:', error);
+      } finally {
+        setLoadingFriends(false);
+      }
+    };
+
+    if (showFriendTagger) {
+      loadFriends();
+    }
+  }, [user?.id, showFriendTagger]);
+
+  const filteredFriends = availableFriends.filter(friend =>
+    friend.name.toLowerCase().includes(friendSearchQuery.toLowerCase()) ||
+    friend.username.toLowerCase().includes(friendSearchQuery.toLowerCase())
+  );
 
   const toggleFriendTag = (friendId: string) => {
     setTaggedFriends(prev => 
@@ -35,6 +89,12 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmi
     );
   };
 
+  const getTaggedFriendNames = () => {
+    return availableFriends
+      .filter(friend => taggedFriends.includes(friend.id))
+      .map(friend => friend.name)
+      .join(', ');
+  };
   const handleSubmit = () => {
     if (rating === 0) return;
     onSubmit({ 
@@ -137,40 +197,75 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmi
                 {taggedFriends.length > 0 ? `${taggedFriends.length} tagged` : 'Add friends'}
               </Button>
             </div>
-            
+
             {showFriendTagger && (
-              <div className="modern-card p-4 space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  {availableFriends.map(friend => (
-                    <Button
-                      key={friend.id}
-                      variant={taggedFriends.includes(friend.id) ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => toggleFriendTag(friend.id)}
-                      className={`flex items-center space-x-2 ${
-                        taggedFriends.includes(friend.id) 
-                          ? 'bg-primary text-primary-foreground' 
-                          : 'hover:bg-muted'
-                      }`}
-                      data-testid={`button-tag-friend-${friend.id}`}
-                    >
-                      <Avatar className="w-5 h-5">
-                        <AvatarFallback className="text-xs">
-                          {friend.avatar}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-xs">{friend.name}</span>
-                    </Button>
-                  ))}
+              <Card className="p-4 space-y-3">
+                {/* Friend Search */}
+                <Input
+                  placeholder="Search friends..."
+                  value={friendSearchQuery}
+                  onChange={(e) => setFriendSearchQuery(e.target.value)}
+                  className="text-sm"
+                  data-testid="input-friend-search"
+                />
+
+                {/* Friends List */}
+                <div className="max-h-32 overflow-y-auto space-y-2">
+                  {loadingFriends ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mx-auto"></div>
+                      <p className="text-xs text-muted-foreground mt-2">Loading friends...</p>
+                    </div>
+                  ) : filteredFriends.length > 0 ? (
+                    filteredFriends.map(friend => (
+                      <div
+                        key={friend.id}
+                        onClick={() => toggleFriendTag(friend.id)}
+                        className={`flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                          taggedFriends.includes(friend.id) 
+                            ? 'bg-primary/10 border border-primary/20' 
+                            : 'hover:bg-muted/50'
+                        }`}
+                        data-testid={`button-tag-friend-${friend.id}`}
+                      >
+                        <Avatar className="w-8 h-8">
+                          {friend.avatar ? (
+                            <AvatarImage src={friend.avatar} alt={friend.name} />
+                          ) : (
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                              {friend.name[0].toUpperCase()}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{friend.name}</p>
+                          <p className="text-xs text-muted-foreground">@{friend.username}</p>
+                        </div>
+                        {taggedFriends.includes(friend.id) && (
+                          <Badge variant="secondary" className="text-xs">Tagged</Badge>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4">
+                      <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        {friendSearchQuery ? 'No friends found' : 'No friends to tag'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Follow other users to tag them in reviews
+                      </p>
+                    </div>
+                  )}
                 </div>
-              </div>
+              </Card>
             )}
           </div>
 
           {/* Social Sharing Options */}
           <div className="modern-card p-4 space-y-4">
             <h4 className="font-medium text-foreground">Privacy & Sharing</h4>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Globe className="h-4 w-4 text-muted-foreground" />
@@ -205,6 +300,11 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmi
           >
             <Coffee className="h-5 w-5 mr-2" />
             Share Your Review
+            {taggedFriends.length > 0 && (
+              <Badge variant="secondary" className="ml-2 bg-white/20 text-white">
+                +{taggedFriends.length} friend{taggedFriends.length === 1 ? '' : 's'}
+              </Badge>
+            )}
           </Button>
         </div>
       </div>
