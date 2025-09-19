@@ -5,8 +5,9 @@ import SignInFlow from "@/components/SignInFlow";
 import OnboardingFlow from "@/components/OnboardingFlow";
 import FeedPage from "@/components/FeedPage";
 import LeaderboardPage from "@/components/LeaderboardPage";
-import MapPage from "@/components/MapPage";
+import EnhancedMapPage from "@/components/EnhancedMapPage";
 import ProfilePage from "@/components/ProfilePage";
+import EnhancedProfilePage from "@/components/EnhancedProfilePage";
 import CoffeeShopDetail from "@/components/CoffeeShopDetail";
 import BottomNavigation from "@/components/BottomNavigation";
 import Editor from "@/pages/Editor";
@@ -117,7 +118,7 @@ const Index = () => {
                 />
               )}
               {currentView === "map" && (
-                <MapPage 
+                <EnhancedMapPage 
                   onAddReview={handleAddReview} 
                   onCafesLoaded={setMapCafes}
                 />
@@ -134,7 +135,7 @@ const Index = () => {
                 />
               )}
               {currentView === "profile" && (
-                <ProfilePage 
+                <EnhancedProfilePage 
                   onCafeClick={(cafeId) => {
                     console.log('Profile cafe clicked:', cafeId);
                     // Could navigate to cafe detail view

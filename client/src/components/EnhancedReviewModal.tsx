@@ -5,18 +5,18 @@ import { Switch } from './ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
-import { Card } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Friend } from '@/types';
+import { Friend, ReviewWithTags } from '@/types';
 
-interface ReviewModalProps {
+interface EnhancedReviewModalProps {
   cafe: { id: string; name: string; address: string };
   onClose: () => void;
-  onSubmit: (review: { rating: number; text: string; isPublic: boolean; shareToFeed: boolean; taggedFriends: string[] }) => void;
+  onSubmit: (review: ReviewWithTags) => void;
 }
 
-export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmit }) => {
+export const EnhancedReviewModal: React.FC<EnhancedReviewModalProps> = ({ cafe, onClose, onSubmit }) => {
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [isPublic, setIsPublic] = useState(true);
@@ -36,6 +36,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmi
       
       setLoadingFriends(true);
       try {
+        // Get users that the current user follows (simplified friend system)
         const { data: followsData, error } = await supabase
           .from('follows')
           .select(`
@@ -95,20 +96,21 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmi
       .map(friend => friend.name)
       .join(', ');
   };
+
   const handleSubmit = () => {
     if (rating === 0) return;
     onSubmit({ 
       rating, 
       text: reviewText, 
+      taggedFriends,
       isPublic, 
-      shareToFeed, 
-      taggedFriends 
+      shareToFeed
     });
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="glass-card w-full max-w-md rounded-3xl overflow-hidden shadow-2xl border border-white/20">
+      <div className="glass-card w-full max-w-md rounded-3xl overflow-hidden shadow-2xl border border-white/20 max-h-[90vh] overflow-y-auto">
         {/* Social Header */}
         <div className="bg-gradient-primary p-6 text-center">
           <div className="flex justify-between items-start mb-4">
@@ -179,10 +181,14 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmi
               placeholder="What made this place special? Your friends want to know!"
               className="w-full h-24 p-4 modern-card border-0 resize-none focus:ring-2 focus:ring-primary/20 text-sm placeholder:text-muted-foreground"
               data-testid="textarea-review"
+              maxLength={500}
             />
+            <div className="text-xs text-muted-foreground text-right">
+              {reviewText.length}/500 characters
+            </div>
           </div>
 
-          {/* Friend Tagging Section */}
+          {/* Enhanced Friend Tagging Section */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="font-medium text-foreground">Tag friends</h4>
@@ -197,6 +203,14 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmi
                 {taggedFriends.length > 0 ? `${taggedFriends.length} tagged` : 'Add friends'}
               </Button>
             </div>
+            
+            {/* Show tagged friends summary */}
+            {taggedFriends.length > 0 && (
+              <div className="modern-card p-3">
+                <p className="text-sm text-muted-foreground mb-2">Tagged friends:</p>
+                <p className="text-sm font-medium">{getTaggedFriendNames()}</p>
+              </div>
+            )}
             
             {showFriendTagger && (
               <Card className="p-4 space-y-3">
@@ -269,7 +283,10 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmi
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Globe className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">Make public</span>
+                <div>
+                  <span className="text-sm text-foreground">Make public</span>
+                  <p className="text-xs text-muted-foreground">Anyone can see this review</p>
+                </div>
               </div>
               <Switch
                 checked={isPublic}
@@ -281,7 +298,10 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({ cafe, onClose, onSubmi
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Heart className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">Share to feed</span>
+                <div>
+                  <span className="text-sm text-foreground">Share to feed</span>
+                  <p className="text-xs text-muted-foreground">Show in your friends' feeds</p>
+                </div>
               </div>
               <Switch
                 checked={shareToFeed}
