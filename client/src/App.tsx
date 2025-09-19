@@ -10,7 +10,7 @@ import Editor from "./pages/Editor";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import UserProfile from "./pages/UserProfile";
-import EnhancedMapPage from "./components/EnhancedMapPage";
+import MapPage from "./components/MapPage";
 
 const queryClient = new QueryClient();
 
@@ -27,7 +27,7 @@ const App = () => (
             <Route path="/editor" element={<Editor />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/u/:id" element={<UserProfile />} />
-            <Route path="/map" element={<EnhancedMapPage onAddReview={() => {}} />} />
+            <Route path="/map" element={<MapPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
