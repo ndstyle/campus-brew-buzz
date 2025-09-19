@@ -21,7 +21,7 @@ import {
   Edit,
   Settings,
 } from "lucide-react";
-import { useEnhancedUserProfile } from "@/hooks/useEnhancedUserProfile";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { format } from "date-fns";
 import { ProfileEdit } from "@/components/ProfileEdit";
 import { UserPreferences } from "@/components/UserPreferences";
@@ -41,7 +41,7 @@ const ProfilePage = ({
   onFollowingClick,
 }: ProfilePageProps) => {
   const { profile, followStats, loading, isCurrentUser, toggleFollow } =
-    useEnhancedUserProfile(userId);
+    useUserProfile(userId);
   const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
@@ -175,8 +175,8 @@ const ProfilePage = ({
         {/* Avatar and Basic Info */}
         <div className="text-center space-y-4">
           <Avatar className="h-24 w-24 mx-auto">
-            {profile.profilePicture ? (
-              <AvatarImage src={profile.profilePicture} alt="Profile picture" />
+            {profile.profile_picture ? (
+              <AvatarImage src={profile.profile_picture} alt="Profile picture" />
             ) : (
               <AvatarFallback className="bg-primary/10 text-primary font-semibold text-2xl">
                 {getAvatarInitials()}

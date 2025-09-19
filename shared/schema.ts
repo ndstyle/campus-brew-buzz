@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, decimal, bigint } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, decimal, bigint, jsonb } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -10,6 +10,8 @@ export const users = pgTable("users", {
   first_name: text("first_name"),
   last_name: text("last_name"),
   college: text("college"),
+  bio: text("bio"),
+  profile_picture: text("profile_picture"),
   created_at: timestamp("created_at").defaultNow(),
 });
 
@@ -25,6 +27,9 @@ export const cafes = pgTable("cafes", {
   lng: decimal("lng", { precision: 11, scale: 8 }),
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  category: text("category").default("cafe"),
+  cuisine_type: text("cuisine_type").default("coffee"),
+  price_range: text("price_range").default("$$"),
   created_at: timestamp("created_at").defaultNow(),
 });
 
@@ -35,6 +40,7 @@ export const reviews = pgTable("reviews", {
   rating: integer("rating").notNull(),
   blurb: text("blurb"),
   photo_url: text("photo_url"),
+  tagged_friends: jsonb("tagged_friends").default(sql`'[]'::jsonb`),
   created_at: timestamp("created_at").defaultNow(),
 });
 

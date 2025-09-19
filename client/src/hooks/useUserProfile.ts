@@ -7,6 +7,8 @@ export interface UserProfile {
   first_name?: string;
   last_name?: string;
   college?: string;
+  bio?: string;
+  profile_picture?: string;
   review_count: number;
   unique_cafes_count: number;
   followers_count: number;
@@ -62,7 +64,9 @@ export const useUserProfile = (userId?: string) => {
           username,
           first_name,
           last_name,
-          college
+          college,
+          bio,
+          profile_picture
         `)
         .eq('id', profileUserId)
         .single();
@@ -144,6 +148,8 @@ export const useUserProfile = (userId?: string) => {
         first_name: userData.first_name || undefined,
         last_name: userData.last_name || undefined,
         college: userData.college || undefined,
+        bio: userData.bio || undefined,
+        profile_picture: userData.profile_picture || undefined,
         review_count: stats.review_count,
         unique_cafes_count: stats.unique_cafes_count,
         followers_count: followersCount,
