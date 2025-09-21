@@ -4,23 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Users,
-  UserPlus,
-  UserMinus,
-  Coffee,
-  Calendar,
-  Star,
-  MapPin,
-  Edit,
-  Settings,
-} from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Users, UserPlus, UserMinus, Coffee, Calendar, Star, MapPin, Edit, Settings } from "lucide-react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { format } from "date-fns";
 import { ProfileEdit } from "@/components/ProfileEdit";
@@ -34,20 +19,12 @@ interface ProfilePageProps {
   onFollowingClick?: () => void;
 }
 
-const ProfilePage = ({
-  userId,
-  onCafeClick,
-  onFollowersClick,
-  onFollowingClick,
-}: ProfilePageProps) => {
-  const { profile, followStats, loading, isCurrentUser, toggleFollow } =
-    useUserProfile(userId);
+const ProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowingClick }: ProfilePageProps) => {
+  const { profile, followStats, loading, isCurrentUser, toggleFollow } = useUserProfile(userId);
   const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
-  const [followersModalTab, setFollowersModalTab] = useState<
-    "followers" | "following"
-  >("followers");
+  const [followersModalTab, setFollowersModalTab] = useState<'followers' | 'following'>('followers');
 
   const getDisplayName = () => {
     if (!profile) return "";
@@ -73,11 +50,10 @@ const ProfilePage = ({
 
   const generateSummary = () => {
     if (!profile) return "";
-
-    const cafesText =
-      profile.unique_cafes_count === 1 ? "coffee shop" : "coffee & boba shops";
+    
+    const cafesText = profile.unique_cafes_count === 1 ? "coffee shop" : "coffee & boba shops";
     const reviewsText = profile.review_count === 1 ? "review" : "reviews";
-
+    
     return `Visited ${profile.unique_cafes_count} ${cafesText} with ${profile.review_count} ${reviewsText}.`;
   };
 
@@ -131,12 +107,9 @@ const ProfilePage = ({
           <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mx-auto">
             <Users className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold text-muted-foreground">
-            Profile not found
-          </h3>
+          <h3 className="text-lg font-semibold text-muted-foreground">Profile not found</h3>
           <p className="text-sm text-muted-foreground">
-            This user might not exist or there was an error loading their
-            profile.
+            This user might not exist or there was an error loading their profile.
           </p>
         </div>
       </div>
@@ -175,15 +148,11 @@ const ProfilePage = ({
         {/* Avatar and Basic Info */}
         <div className="text-center space-y-4">
           <Avatar className="h-24 w-24 mx-auto">
-            {profile.profile_picture ? (
-              <AvatarImage src={profile.profile_picture} alt="Profile picture" />
-            ) : (
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-2xl">
-                {getAvatarInitials()}
-              </AvatarFallback>
-            )}
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-2xl">
+              {getAvatarInitials()}
+            </AvatarFallback>
           </Avatar>
-
+          
           <div className="space-y-2">
             <h1 className="text-2xl font-bold">{getDisplayName()}</h1>
             <p className="text-muted-foreground">@{profile.username}</p>
@@ -194,53 +163,38 @@ const ProfilePage = ({
               </div>
             )}
           </div>
-
-          {/* Bio Section */}
-          {profile.bio && (
-            <div className="max-w-sm mx-auto">
-              <p className="text-sm text-muted-foreground italic">
-                "{profile.bio}"
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Stats Row */}
         <div className="flex justify-center space-x-8">
-          <button
+          <button 
             className="text-center space-y-1 hover:bg-muted/50 rounded-lg p-2 transition-colors"
             onClick={() => {
-              setFollowersModalTab("followers");
+              setFollowersModalTab('followers');
               setIsFollowersModalOpen(true);
               onFollowersClick?.();
             }}
             data-testid="button-followers"
           >
-            <div className="text-xl font-bold">
-              {followStats?.followers_count || 0}
-            </div>
+            <div className="text-xl font-bold">{followStats?.followers_count || 0}</div>
             <div className="text-sm text-muted-foreground">Followers</div>
           </button>
-
-          <button
+          
+          <button 
             className="text-center space-y-1 hover:bg-muted/50 rounded-lg p-2 transition-colors"
             onClick={() => {
-              setFollowersModalTab("following");
+              setFollowersModalTab('following');
               setIsFollowersModalOpen(true);
               onFollowingClick?.();
             }}
             data-testid="button-following"
           >
-            <div className="text-xl font-bold">
-              {followStats?.following_count || 0}
-            </div>
+            <div className="text-xl font-bold">{followStats?.following_count || 0}</div>
             <div className="text-sm text-muted-foreground">Following</div>
           </button>
-
+          
           <div className="text-center space-y-1">
-            <div className="text-xl font-bold">
-              {profile.unique_cafes_count}
-            </div>
+            <div className="text-xl font-bold">{profile.unique_cafes_count}</div>
             <div className="text-sm text-muted-foreground">Shops Visited</div>
           </div>
         </div>
@@ -248,7 +202,7 @@ const ProfilePage = ({
         {/* Follow Button (if viewing another user) */}
         {!isCurrentUser && followStats && (
           <div className="flex justify-center">
-            <Button
+            <Button 
               onClick={toggleFollow}
               variant={followStats.is_following ? "outline" : "default"}
               className="px-8"
@@ -270,7 +224,9 @@ const ProfilePage = ({
 
         {/* Summary Section */}
         <div className="text-center">
-          <p className="text-muted-foreground">{generateSummary()}</p>
+          <p className="text-muted-foreground">
+            {generateSummary()}
+          </p>
         </div>
       </div>
 
@@ -278,24 +234,20 @@ const ProfilePage = ({
       <div className="flex-1 overflow-y-auto px-6 pb-6">
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">Recent Activity</h2>
-
+          
           {profile.recent_reviews.length === 0 ? (
             <div className="text-center py-8">
               <Coffee className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                No reviews yet
-              </h3>
+              <h3 className="text-lg font-semibold text-muted-foreground mb-2">No reviews yet</h3>
               <p className="text-sm text-muted-foreground">
-                {isCurrentUser
-                  ? "Start exploring coffee shops and write your first review!"
-                  : "This user hasn't written any reviews yet."}
+                {isCurrentUser ? "Start exploring coffee shops and write your first review!" : "This user hasn't written any reviews yet."}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
               {profile.recent_reviews.map((review) => (
-                <Card
-                  key={review.id}
+                <Card 
+                  key={review.id} 
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => onCafeClick?.(review.cafe.id)}
                 >
@@ -305,36 +257,32 @@ const ProfilePage = ({
                       <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
                         <Coffee className="h-5 w-5 text-primary" />
                       </div>
-
+                      
                       {/* Review Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-sm truncate">
-                            {review.cafe.name}
-                          </h3>
+                          <h3 className="font-semibold text-sm truncate">{review.cafe.name}</h3>
                           <div className="flex items-center gap-1">
                             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                            <span className="text-xs font-medium">
-                              {review.rating.toFixed(1)}
-                            </span>
+                            <span className="text-xs font-medium">{review.rating.toFixed(1)}</span>
                           </div>
                         </div>
-
+                        
                         {review.cafe.address && (
                           <p className="text-xs text-muted-foreground truncate mb-1">
                             {review.cafe.address}
                           </p>
                         )}
-
+                        
                         {review.blurb && (
                           <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                             {review.blurb}
                           </p>
                         )}
-
+                        
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          {format(new Date(review.created_at), "MMM d, yyyy")}
+                          {format(new Date(review.created_at), 'MMM d, yyyy')}
                         </div>
                       </div>
                     </div>

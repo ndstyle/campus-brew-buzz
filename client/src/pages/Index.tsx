@@ -5,9 +5,8 @@ import SignInFlow from "@/components/SignInFlow";
 import OnboardingFlow from "@/components/OnboardingFlow";
 import FeedPage from "@/components/FeedPage";
 import LeaderboardPage from "@/components/LeaderboardPage";
-import EnhancedMapPage from "@/components/EnhancedMapPage";
+import MapPage from "@/components/MapPage";
 import ProfilePage from "@/components/ProfilePage";
-import EnhancedProfilePage from "@/components/EnhancedProfilePage";
 import CoffeeShopDetail from "@/components/CoffeeShopDetail";
 import BottomNavigation from "@/components/BottomNavigation";
 import Editor from "@/pages/Editor";
@@ -48,7 +47,7 @@ const Index = () => {
       setAppState("signin");
       return;
     }
-
+    
     // If a cafe is provided (from map marker), store it for autofill
     if (cafe) {
       console.log('🎯 [INDEX] Setting selected cafe for review autofill:', cafe);
@@ -57,7 +56,7 @@ const Index = () => {
       // Clear selection if no cafe provided (e.g., from Add Review button)
       setSelectedCafeForReview(null);
     }
-
+    
     setCurrentView("editor");
   };
 
@@ -118,7 +117,7 @@ const Index = () => {
                 />
               )}
               {currentView === "map" && (
-                <EnhancedMapPage 
+                <MapPage 
                   onAddReview={handleAddReview} 
                   onCafesLoaded={setMapCafes}
                 />
@@ -135,7 +134,7 @@ const Index = () => {
                 />
               )}
               {currentView === "profile" && (
-                <EnhancedProfilePage 
+                <ProfilePage 
                   onCafeClick={(cafeId) => {
                     console.log('Profile cafe clicked:', cafeId);
                     // Could navigate to cafe detail view
