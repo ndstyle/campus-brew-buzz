@@ -1,4 +1,4 @@
-import { Trophy, Map, Plus, Star, User, Coffee, Heart } from "lucide-react";
+import { Trophy, Map, Search, Users, User, Coffee, Heart } from "lucide-react";
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -9,8 +9,8 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
   const tabs = [
     { id: "leaderboard", icon: Trophy, label: "Rankings" },
     { id: "map", icon: Map, label: "Discover" },
-    { id: "search", icon: Coffee, label: "Review", isCenter: true },
-    { id: "feed", icon: Heart, label: "Social" },
+    { id: "search", icon: Search, label: "Search", isCenter: true },
+    { id: "social", icon: Users, label: "Social" },
     { id: "profile", icon: User, label: "Profile" },
   ];
 

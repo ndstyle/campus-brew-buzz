@@ -7,6 +7,8 @@ export interface UserProfile {
   first_name?: string;
   last_name?: string;
   college?: string;
+  bio?: string;
+  profile_picture?: string
   review_count: number;
   unique_cafes_count: number;
   followers_count: number;

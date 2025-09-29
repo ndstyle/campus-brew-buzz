@@ -125,7 +125,7 @@ export const useUserStats = () => {
         id: review.id,
         rating: Number(review.rating),
         blurb: review.blurb,
-        created_at: review.created_at,
+        created_at: review.created_at || new Date().toISOString(),
         cafe: {
           name: review.cafes?.name || 'Unknown Cafe',
           campus: review.cafes?.campus || 'Unknown Campus'

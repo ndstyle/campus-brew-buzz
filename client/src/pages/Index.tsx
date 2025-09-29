@@ -4,6 +4,7 @@ import AuthFlow from "@/components/AuthFlow";
 import SignInFlow from "@/components/SignInFlow";
 import OnboardingFlow from "@/components/OnboardingFlow";
 import FeedPage from "@/components/FeedPage";
+import SearchPage from "@/components/SearchPage";
 import LeaderboardPage from "@/components/LeaderboardPage";
 import MapPage from "@/components/MapPage";
 import ProfilePage from "@/components/ProfilePage";
@@ -14,12 +15,20 @@ import CampusDebugger from "@/components/CampusDebugger";
 import { useAuth } from "@/contexts/AuthContext";
 
 type AppState = "landing" | "auth" | "signin" | "onboarding" | "app";
-type AppView = "feed" | "leaderboard" | "map" | "search" | "profile" | "editor" | "detail";
+type AppView =
+  | "feed"
+  | "leaderboard"
+  | "map"
+  | "search"
+  | "social"
+  | "profile"
+  | "editor"
+  | "detail";
 
 const Index = () => {
   const [appState, setAppState] = useState<AppState>("landing");
-  const [activeTab, setActiveTab] = useState("feed");
-  const [currentView, setCurrentView] = useState<AppView>("feed");
+  const [activeTab, setActiveTab] = useState("search");
+  const [currentView, setCurrentView] = useState<AppView>("search");
   const [selectedReview, setSelectedReview] = useState<any>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedCafeForReview, setSelectedCafeForReview] = useState<any>(null);
@@ -38,7 +47,7 @@ const Index = () => {
 
   const handleReviewSubmitted = () => {
     // Trigger refresh of the feed
-    setRefreshTrigger(prev => prev + 1);
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   const handleAddReview = (cafe?: any) => {
@@ -47,16 +56,19 @@ const Index = () => {
       setAppState("signin");
       return;
     }
-    
+
     // If a cafe is provided (from map marker), store it for autofill
     if (cafe) {
-      console.log('🎯 [INDEX] Setting selected cafe for review autofill:', cafe);
+      console.log(
+        "🎯 [INDEX] Setting selected cafe for review autofill:",
+        cafe,
+      );
       setSelectedCafeForReview(cafe);
     } else {
       // Clear selection if no cafe provided (e.g., from Add Review button)
       setSelectedCafeForReview(null);
     }
-    
+
     setCurrentView("editor");
   };
 
@@ -74,18 +86,23 @@ const Index = () => {
   const renderCurrentState = () => {
     switch (appState) {
       case "landing":
-        return <LandingPage onSignUp={() => setAppState("auth")} onSignIn={() => setAppState("signin")} />;
+        return (
+          <LandingPage
+            onSignUp={() => setAppState("auth")}
+            onSignIn={() => setAppState("signin")}
+          />
+        );
       case "auth":
         return (
-          <AuthFlow 
-            onBack={() => setAppState("landing")} 
+          <AuthFlow
+            onBack={() => setAppState("landing")}
             onComplete={() => setAppState("onboarding")}
           />
         );
       case "signin":
         return (
-          <SignInFlow 
-            onBack={() => setAppState("landing")} 
+          <SignInFlow
+            onBack={() => setAppState("landing")}
             onComplete={() => setAppState("app")}
           />
         );
@@ -98,9 +115,19 @@ const Index = () => {
             <CampusDebugger />
             <div className="pb-20">
               {currentView === "feed" && (
-                <FeedPage 
+                <FeedPage
                   onReviewClick={(review) => {
-                    console.log('Review clicked:', review);
+                    console.log("Review clicked:", review);
+                    // Preview functionality removed
+                  }}
+                  onAddReview={handleAddReview}
+                  refreshTrigger={refreshTrigger}
+                />
+              )}
+              {currentView === "social" && (
+                <FeedPage
+                  onReviewClick={(review) => {
+                    console.log("Review clicked:", review);
                     // Preview functionality removed
                   }}
                   onAddReview={handleAddReview}
@@ -108,53 +135,44 @@ const Index = () => {
                 />
               )}
               {currentView === "leaderboard" && (
-                <LeaderboardPage 
+                <LeaderboardPage
                   onUserClick={(userId) => {
-                    console.log('Navigate to profile:', userId);
+                    console.log("Navigate to profile:", userId);
                     // For now, just show current user profile
                     setCurrentView("profile");
                   }}
                 />
               )}
               {currentView === "map" && (
-                <MapPage 
-                  onAddReview={handleAddReview} 
+                <MapPage
+                  onAddReview={handleAddReview}
                   onCafesLoaded={setMapCafes}
                 />
               )}
-              {currentView === "search" && (
-                <FeedPage 
-                  searchMode={true}
-                  onReviewClick={(review) => {
-                    console.log('Review clicked:', review);
-                    // Preview functionality removed
-                  }}
-                  onAddReview={handleAddReview}
-                  refreshTrigger={refreshTrigger}
-                />
-              )}
+              {currentView === "search" && <SearchPage />}
+
               {currentView === "profile" && (
-                <ProfilePage 
+                <ProfilePage
                   onCafeClick={(cafeId) => {
-                    console.log('Profile cafe clicked:', cafeId);
+                    console.log("Profile cafe clicked:", cafeId);
                     // Could navigate to cafe detail view
                   }}
                   onFollowersClick={() => {
-                    console.log('Show followers');
+                    console.log("Show followers");
                     // Could show followers list
                   }}
                   onFollowingClick={() => {
-                    console.log('Show following');
+                    console.log("Show following");
                     // Could show following list
                   }}
                 />
               )}
               {currentView === "editor" && (
-                <Editor 
+                <Editor
                   onBack={() => {
                     setCurrentView(activeTab as AppView);
                     setSelectedCafeForReview(null); // Clear selection when going back
-                  }} 
+                  }}
                   onReviewSubmitted={() => {
                     handleReviewSubmitted();
                     setCurrentView(activeTab as AppView);
@@ -165,12 +183,12 @@ const Index = () => {
                 />
               )}
             </div>
-            <BottomNavigation 
-              activeTab={activeTab} 
+            <BottomNavigation
+              activeTab={activeTab}
               onTabChange={(tab) => {
                 setActiveTab(tab);
                 setCurrentView(tab as AppView);
-              }} 
+              }}
             />
           </div>
         );

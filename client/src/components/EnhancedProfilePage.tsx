@@ -4,10 +4,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Users, UserPlus, UserMinus, Coffee, Calendar, Star, MapPin, Edit, Settings, Camera, Save } from "lucide-react";
+import {
+  Users,
+  UserPlus,
+  UserMinus,
+  Coffee,
+  Calendar,
+  Star,
+  MapPin,
+  Edit,
+  Settings,
+  Camera,
+  Save,
+} from "lucide-react";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { format } from "date-fns";
 import { ProfileEdit } from "@/components/ProfileEdit";
@@ -25,14 +42,22 @@ interface EnhancedProfilePageProps {
   onFollowingClick?: () => void;
 }
 
-const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowingClick }: EnhancedProfilePageProps) => {
-  const { profile, followStats, loading, isCurrentUser, toggleFollow } = useUserProfile(userId);
+const EnhancedProfilePage = ({
+  userId,
+  onCafeClick,
+  onFollowersClick,
+  onFollowingClick,
+}: EnhancedProfilePageProps) => {
+  const { profile, followStats, loading, isCurrentUser, toggleFollow } =
+    useUserProfile(userId);
   const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
-  const [followersModalTab, setFollowersModalTab] = useState<'followers' | 'following'>('followers');
+  const [followersModalTab, setFollowersModalTab] = useState<
+    "followers" | "following"
+  >("followers");
   const [isBioEditOpen, setIsBioEditOpen] = useState(false);
-  const [bioText, setBioText] = useState('');
+  const [bioText, setBioText] = useState("");
   const [isUpdatingBio, setIsUpdatingBio] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
@@ -70,7 +95,8 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
   const generateSummary = () => {
     if (!profile) return "";
 
-    const cafesText = profile.unique_cafes_count === 1 ? "coffee shop" : "coffee & boba shops";
+    const cafesText =
+      profile.unique_cafes_count === 1 ? "coffee shop" : "coffee & boba shops";
     const reviewsText = profile.review_count === 1 ? "review" : "reviews";
 
     return `Visited ${profile.unique_cafes_count} ${cafesText} with ${profile.review_count} ${reviewsText}.`;
@@ -82,9 +108,9 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
     setIsUpdatingBio(true);
     try {
       const { error } = await supabase
-        .from('users')
+        .from("users")
         .update({ bio: bioText.trim() || null })
-        .eq('id', user.id);
+        .eq("id", user.id);
 
       if (error) throw error;
 
@@ -95,7 +121,7 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
 
       setIsBioEditOpen(false);
     } catch (error: any) {
-      console.error('Error updating bio:', error);
+      console.error("Error updating bio:", error);
       toast({
         title: "Error",
         description: "Failed to update bio",
@@ -106,7 +132,9 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
     }
   };
 
-  const handleProfilePictureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfilePictureUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file || !user?.id) return;
 
@@ -120,7 +148,7 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
       return;
     }
 
-    if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
+    if (!["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
       toast({
         title: "Error",
         description: "Profile picture must be JPG or PNG format",
@@ -131,28 +159,28 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
 
     setIsUploadingPhoto(true);
     try {
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}/profile.${fileExt}`;
 
       const { data, error } = await supabase.storage
-        .from('review-photos')
+        .from("review-photos")
         .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true
+          cacheControl: "3600",
+          upsert: true,
         });
 
       if (error) throw error;
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('review-photos')
-        .getPublicUrl(data.path);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("review-photos").getPublicUrl(data.path);
 
       // Update user profile
       const { error: updateError } = await supabase
-        .from('users')
+        .from("users")
         .update({ profile_picture: publicUrl })
-        .eq('id', user.id);
+        .eq("id", user.id);
 
       if (updateError) throw updateError;
 
@@ -164,7 +192,7 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
       // Refresh the page to show new picture
       window.location.reload();
     } catch (error: any) {
-      console.error('Error uploading profile picture:', error);
+      console.error("Error uploading profile picture:", error);
       toast({
         title: "Error",
         description: "Failed to upload profile picture",
@@ -220,9 +248,12 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
           <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center mx-auto">
             <Users className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold text-muted-foreground">Profile not found</h3>
+          <h3 className="text-lg font-semibold text-muted-foreground">
+            Profile not found
+          </h3>
           <p className="text-sm text-muted-foreground">
-            This user might not exist or there was an error loading their profile.
+            This user might not exist or there was an error loading their
+            profile.
           </p>
         </div>
       </div>
@@ -263,8 +294,11 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
         <div className="text-center space-y-4">
           <div className="relative">
             <Avatar className="h-24 w-24 mx-auto">
-              {profile.profilePicture ? (
-                <AvatarImage src={profile.profilePicture} alt="Profile picture" />
+              {profile.profilePicture || profile.profile_picture ? (
+                <AvatarImage
+                  src={profile.profilePicture || profile.profile_picture}
+                  alt="profile picture"
+                />
               ) : (
                 <AvatarFallback className="bg-primary/10 text-primary font-semibold text-2xl">
                   {getAvatarInitials()}
@@ -287,7 +321,9 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
                   size="sm"
                   variant="secondary"
                   className="h-8 w-8 rounded-full p-0"
-                  onClick={() => document.getElementById('profile-picture-upload')?.click()}
+                  onClick={() =>
+                    document.getElementById("profile-picture-upload")?.click()
+                  }
                   disabled={isUploadingPhoto}
                   data-testid="button-upload-profile-picture"
                 >
@@ -317,7 +353,10 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
             {profile.bio || isCurrentUser ? (
               <div className="max-w-sm mx-auto">
                 <p className="text-sm text-muted-foreground">
-                  {profile.bio || (isCurrentUser ? "Add a bio to tell others about yourself!" : "No bio available.")}
+                  {profile.bio ||
+                    (isCurrentUser
+                      ? "Add a bio to tell others about yourself!"
+                      : "No bio available.")}
                 </p>
                 {isCurrentUser && (
                   <Button
@@ -338,34 +377,40 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
 
         {/* Stats Row */}
         <div className="flex justify-center space-x-8">
-          <button 
+          <button
             className="text-center space-y-1 hover:bg-muted/50 rounded-lg p-2 transition-colors"
             onClick={() => {
-              setFollowersModalTab('followers');
+              setFollowersModalTab("followers");
               setIsFollowersModalOpen(true);
               onFollowersClick?.();
             }}
             data-testid="button-followers"
           >
-            <div className="text-xl font-bold">{followStats?.followers_count || 0}</div>
+            <div className="text-xl font-bold">
+              {followStats?.followers_count || 0}
+            </div>
             <div className="text-sm text-muted-foreground">Followers</div>
           </button>
 
-          <button 
+          <button
             className="text-center space-y-1 hover:bg-muted/50 rounded-lg p-2 transition-colors"
             onClick={() => {
-              setFollowersModalTab('following');
+              setFollowersModalTab("following");
               setIsFollowersModalOpen(true);
               onFollowingClick?.();
             }}
             data-testid="button-following"
           >
-            <div className="text-xl font-bold">{followStats?.following_count || 0}</div>
+            <div className="text-xl font-bold">
+              {followStats?.following_count || 0}
+            </div>
             <div className="text-sm text-muted-foreground">Following</div>
           </button>
 
           <div className="text-center space-y-1">
-            <div className="text-xl font-bold">{profile.unique_cafes_count}</div>
+            <div className="text-xl font-bold">
+              {profile.unique_cafes_count}
+            </div>
             <div className="text-sm text-muted-foreground">Shops Visited</div>
           </div>
         </div>
@@ -373,7 +418,7 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
         {/* Follow Button (if viewing another user) */}
         {!isCurrentUser && followStats && (
           <div className="flex justify-center">
-            <Button 
+            <Button
               onClick={toggleFollow}
               variant={followStats.is_following ? "outline" : "default"}
               className="px-8"
@@ -395,9 +440,7 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
 
         {/* Summary Section */}
         <div className="text-center">
-          <p className="text-muted-foreground">
-            {generateSummary()}
-          </p>
+          <p className="text-muted-foreground">{generateSummary()}</p>
         </div>
       </div>
 
@@ -409,16 +452,20 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
           {profile.recent_reviews.length === 0 ? (
             <div className="text-center py-8">
               <Coffee className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-muted-foreground mb-2">No reviews yet</h3>
+              <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                No reviews yet
+              </h3>
               <p className="text-sm text-muted-foreground">
-                {isCurrentUser ? "Start exploring coffee shops and write your first review!" : "This user hasn't written any reviews yet."}
+                {isCurrentUser
+                  ? "Start exploring coffee shops and write your first review!"
+                  : "This user hasn't written any reviews yet."}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
               {profile.recent_reviews.map((review) => (
-                <Card 
-                  key={review.id} 
+                <Card
+                  key={review.id}
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => onCafeClick?.(review.cafe.id)}
                 >
@@ -430,10 +477,14 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-sm truncate">{review.cafe.name}</h3>
+                          <h3 className="font-semibold text-sm truncate">
+                            {review.cafe.name}
+                          </h3>
                           <div className="flex items-center gap-1">
                             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                            <span className="text-xs font-medium">{review.rating.toFixed(1)}</span>
+                            <span className="text-xs font-medium">
+                              {review.rating.toFixed(1)}
+                            </span>
                           </div>
                         </div>
 
@@ -451,7 +502,7 @@ const EnhancedProfilePage = ({ userId, onCafeClick, onFollowersClick, onFollowin
 
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          {format(new Date(review.created_at), 'MMM d, yyyy')}
+                          {format(new Date(review.created_at), "MMM d, yyyy")}
                         </div>
                       </div>
                     </div>
