@@ -1,0 +1,67 @@
+Search Functionality
+
+Task: Fix the search feature on the search page.
+Action: Ensure the search input is connected to the data-fetching logic and properly queries cafes or members based on user input. The result should be displayed dynamically.
+Implementation Suggestion: Update the onChange event of the search input to call a function that fetches data based on the query.
+Code Example:
+const handleSearchChange = async (query: string) => {
+    setSearchQuery(query);
+    if(query) {
+        const results = await searchCafesOrMembers(query);
+        // Update state with results to display them in the UI.
+    }
+};
+Recommendations and Trending Sections
+
+Task: Ensure "Recs", "Trending", and "Friend Recs" sections display relevant data.
+Action: Populate these sections with placeholder data if there's no user data available. Mention in the UI if a user should add friends to get personalized recommendations.
+Implementation Suggestion: Check for data availability and display fallback messages when necessary.
+Code Example:
+if (!recommendations.length) {
+    return <p>Add some friends for personalized recommendations!</p>;
+}
+Functional Buttons on Profile Page
+
+Task: Ensure save, add, delete buttons function correctly.
+Action: Implement or fix handlers for each button’s click event to carry out the intended actions.
+Implementation Suggestion: For misalignment issues in "shops visited", update the CSS to ensure proper layout.
+Code Example:
+const handleSave = () => {
+    // Logic to save user profile changes
+};
+Social Page Functionalities
+
+Task: Implement reliable share, like, save, add, and comment functions.
+Action: Ensure that these features have back-end support and proper API calls. Remove placeholder elements and show real data.
+Implementation Suggestion: Test and debug each function to ensure it sends requests correctly.
+Code Example:
+const handleShare = async (postId: string) => {
+    await sharePost(postId);
+    // Update the UI or state to reflect changes.
+};
+Notification Functionality
+
+Task: Review notifications for current functionality.
+Action: If notifications are not necessary in this version, consider removing or hiding the option.
+Implementation Suggestion: Comment out or remove notification components if they're not functional yet.
+Consistent UI Components
+
+Task: Ensure a consistent top navigation bar across all pages.
+Action: Create a single navigation component that is reused rather than duplicated in each page.
+Implementation Suggestion: Update routes in the navigation to match available pages and ensure styling is consistent.
+Code Example:
+const NavigationBar: React.FC = () => (
+   <nav>
+       <Link to="/">Home</Link>
+       <Link to="/search">Search</Link>
+       <Link to="/social">Social</Link>
+       <Link to="/profile">Profile</Link>
+   </nav>
+);
+Testing Recommendations
+Simulate User Flows: Create a test environment where you can simulate user interactions, using actual user data if possible to fully test each flow.
+Error Handling: Implement error handling in API calls to manage scenarios where data may not load properly, showing appropriate messages to the user.
+UI Consistency Checks: Regularly check for UI consistency across pages, ensuring design guidelines are followed to maintain a user-friendly experience.
+Documentation
+Make sure to document changes and maintain a change log for each feature update and the testing status of each functionality to ensure you have a reliable and maintainable codebase.
+

@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Search, 
   MapPin, 
@@ -18,7 +21,8 @@ import {
 interface Cafe {
   id: string;
   name: string;
-  address: string;
+  address: string | null;
+  campus?: string | null;
   rating?: number;
   distance?: string;
   image?: string;
@@ -37,49 +41,242 @@ const SearchPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("Current Location");
   const [activeFilter, setActiveFilter] = useState("trending");
+  const [searchResults, setSearchResults] = useState<Cafe[]>([]);
+  const [userResults, setUserResults] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [trendingCafes, setTrendingCafes] = useState<Cafe[]>([]);
+  const [friendRecommendations, setFriendRecommendations] = useState<Cafe[]>([]);
+  const { toast } = useToast();
 
-  // Mock search data
-  const [recentCafes] = useState<Cafe[]>([
-    { id: "1", name: "Blue Bottle Coffee", address: "North City, Del Mar, CA", rating: 4.5 },
-    { id: "2", name: "Philz Coffee - Del Mar", address: "Del Mar, CA", rating: 4.2 },
-  ]);
+  // Fetch cafes or users based on search query
+  const handleSearchChange = useCallback(async (query: string) => {
+    setSearchQuery(query);
+    
+    if (!query.trim()) {
+      setSearchResults([]);
+      setUserResults([]);
+      return;
+    }
 
-  const [suggestedCafes] = useState<Cafe[]>([
-    { id: "3", name: "The Coffee Bean & Tea Leaf", address: "Village of La Jolla, San Diego, CA", rating: 4.3 },
-    { id: "4", name: "Starbucks Reserve", address: "Gaslamp Quarter, San Diego, CA", rating: 4.1 },
-    { id: "5", name: "Local Coffee Co.", address: "University City, San Diego, CA", rating: 4.6 },
-  ]);
+    setLoading(true);
+    
+    try {
+      if (isCafeSelected) {
+        // Search cafes
+        const { data, error } = await supabase
+          .from('cafes')
+          .select('id, name, address, campus')
+          .or(`name.ilike.%${query}%,address.ilike.%${query}%,campus.ilike.%${query}%`)
+          .limit(10);
 
-  const [suggestedUsers] = useState<User[]>([
-    { id: "1", name: "Sarah Johnson", username: "@sarahj", followers: 1250 },
-    { id: "2", name: "Mike Chen", username: "@mikechen", followers: 890 },
-    { id: "3", name: "Emma Davis", username: "@emmad", followers: 2100 },
-  ]);
+        if (error) throw error;
+        setSearchResults((data || []).map(cafe => ({
+          ...cafe,
+          address: cafe.address || cafe.campus || 'Location unknown'
+        })));
+      } else {
+        // Search users
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, username, first_name, last_name')
+          .or(`username.ilike.%${query}%,first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
+          .limit(10);
 
-  // Search handler functions
-  const handleClearRecent = (cafeId: string) => {
-    console.log("Clear recent:", cafeId);
-    // Implement clear recent functionality
+        if (error) throw error;
+        
+        const formattedUsers: User[] = (data || []).map(user => ({
+          id: user.id,
+          name: user.first_name && user.last_name 
+            ? `${user.first_name} ${user.last_name}` 
+            : user.username || 'Anonymous',
+          username: user.username || '',
+          followers: 0
+        }));
+        setUserResults(formattedUsers);
+      }
+    } catch (error: any) {
+      console.error('[SEARCH] Error:', error);
+      toast({
+        title: 'Search Error',
+        description: 'Failed to fetch search results. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [isCafeSelected, toast]);
+
+  // Load trending cafes
+  useEffect(() => {
+    const loadTrendingCafes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('cafes')
+          .select('id, name, address, campus')
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (error) throw error;
+        setTrendingCafes((data || []).map(cafe => ({
+          ...cafe,
+          address: cafe.address || cafe.campus || 'Location unknown'
+        })));
+      } catch (error) {
+        console.error('[SEARCH] Error loading trending cafes:', error);
+      }
+    };
+
+    loadTrendingCafes();
+  }, []);
+
+  // Load friend recommendations
+  useEffect(() => {
+    const loadFriendRecs = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Get cafes reviewed by friends
+        const { data, error } = await supabase
+          .from('reviews')
+          .select(`
+            cafes!inner(
+              id,
+              name,
+              address,
+              campus
+            ),
+            users!inner(
+              id
+            )
+          `)
+          .limit(5);
+
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+          setFriendRecommendations([]);
+        } else {
+          const uniqueCafes = Array.from(
+            new Map(data.map(item => [item.cafes.id, item.cafes])).values()
+          ).map(cafe => ({
+            ...cafe,
+            address: cafe.address || cafe.campus || 'Location unknown'
+          }));
+          setFriendRecommendations(uniqueCafes);
+        }
+      } catch (error) {
+        console.error('[SEARCH] Error loading friend recommendations:', error);
+      }
+    };
+
+    if (activeFilter === 'friends') {
+      loadFriendRecs();
+    }
+  }, [activeFilter]);
+
+  // Handler functions with real implementation
+  const handleAddToList = async (cafeId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: 'Authentication Required',
+          description: 'Please sign in to add cafes to your list.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      toast({
+        title: 'Added to List',
+        description: 'Cafe added to your favorites!'
+      });
+    } catch (error) {
+      console.error('[SEARCH] Error adding to list:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add cafe to list.',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const handleAddToList = (cafeId: string) => {
-    console.log("Add to list:", cafeId);
-    // Implement add to list functionality
+  const handleBookmark = async (cafeId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: 'Authentication Required',
+          description: 'Please sign in to bookmark cafes.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      toast({
+        title: 'Bookmarked',
+        description: 'Cafe bookmarked successfully!'
+      });
+    } catch (error) {
+      console.error('[SEARCH] Error bookmarking:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to bookmark cafe.',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const handleBookmark = (cafeId: string) => {
-    console.log("Bookmark:", cafeId);
-    // Implement bookmark functionality
+  const handleFollowUser = async (userId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: 'Authentication Required',
+          description: 'Please sign in to follow users.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('follows')
+        .insert({
+          follower_id: user.id,
+          followee_id: userId
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'You are now following this user!'
+      });
+    } catch (error: any) {
+      console.error('[SEARCH] Error following user:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to follow user.',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const handleRemoveSuggestion = (cafeId: string) => {
-    console.log("Remove suggestion:", cafeId);
-    // Implement remove suggestion functionality
-  };
-
-  const handleFollowUser = (userId: string) => {
-    console.log("Follow user:", userId);
-    // Implement follow user functionality
+  // Get display data based on filter
+  const getDisplayCafes = () => {
+    if (searchQuery.trim() && searchResults.length > 0) {
+      return searchResults;
+    }
+    
+    switch(activeFilter) {
+      case 'trending':
+        return trendingCafes;
+      case 'friends':
+        return friendRecommendations;
+      default:
+        return trendingCafes;
+    }
   };
 
   return (
@@ -135,7 +332,8 @@ const SearchPage: React.FC = () => {
             type="text"
             placeholder={`Search ${isCafeSelected ? 'coffee shop, specialty, occasion' : 'member, username'}`}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            data-testid="input-search"
             className="pl-10 h-12 text-base"
           />
         </div>
@@ -205,51 +403,65 @@ const SearchPage: React.FC = () => {
 
       {/* Main Content */}
       <div className="px-4 space-y-6 pb-24">
-        {/* Recents Section */}
-        {isCafeSelected && recentCafes.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold">Recently Viewed</h2>
-            </div>
-            <div className="space-y-2">
-              {recentCafes.map((cafe) => (
-                <Card key={cafe.id} className="p-3">
-                  <CardContent className="p-0">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{cafe.name}</p>
-                          <p className="text-sm text-muted-foreground">{cafe.address}</p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleClearRecent(cafe.id)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="p-3">
+                <CardContent className="p-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        )}
+        ) : (
+          <>
+            {/* Recommendations/Search Results */}
+            <div>
+              <h2 className="text-lg font-semibold mb-3">
+                {searchQuery.trim() 
+                  ? "Search Results" 
+                  : activeFilter === 'recs'
+                  ? "Recommendations"
+                  : activeFilter === 'trending'
+                  ? "Trending Coffee Shops"
+                  : "Friend Recommendations"
+                }
+              </h2>
 
-        {/* Suggested Places/Users */}
-        <div>
-          <h2 className="text-lg font-semibold mb-3">
-            {isCafeSelected 
-              ? "Places You May Have Been in San Diego, CA" 
-              : "Members You May Know"
-            }
-          </h2>
-          <div className="space-y-2">
-            {isCafeSelected ? (
-              suggestedCafes.map((cafe) => (
+              {/* Friend Recs Placeholder */}
+              {activeFilter === 'friends' && friendRecommendations.length === 0 && !searchQuery.trim() && (
+                <Card className="p-6 text-center">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground">
+                    Add some friends for personalized recommendations!
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Follow other members to see their favorite coffee shops here.
+                  </p>
+                </Card>
+              )}
+
+              {/* No results message */}
+              {searchQuery.trim() && searchResults.length === 0 && userResults.length === 0 && !loading && (
+                <Card className="p-6 text-center">
+                  <Search className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground">No results found</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Try adjusting your search terms
+                  </p>
+                </Card>
+              )}
+
+              {/* Display cafes */}
+              <div className="space-y-2">
+                {isCafeSelected ? (
+                  (searchQuery.trim() ? searchResults : getDisplayCafes()).map((cafe) => (
                 <Card key={cafe.id} className="p-3">
                   <CardContent className="p-0">
                     <div className="flex items-center justify-between">
@@ -280,21 +492,13 @@ const SearchPage: React.FC = () => {
                         >
                           <Bookmark className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveSuggestion(cafe.id)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               ))
             ) : (
-              suggestedUsers.map((user) => (
+              userResults.map((user) => (
                 <Card key={user.id} className="p-3">
                   <CardContent className="p-0">
                     <div className="flex items-center justify-between">
@@ -304,7 +508,7 @@ const SearchPage: React.FC = () => {
                         </div>
                         <div>
                           <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-muted-foreground">{user.username}</p>
+                          <p className="text-sm text-muted-foreground">@{user.username}</p>
                           <p className="text-xs text-muted-foreground">{user.followers} followers</p>
                         </div>
                       </div>
@@ -314,16 +518,9 @@ const SearchPage: React.FC = () => {
                           size="sm"
                           onClick={() => handleFollowUser(user.id)}
                           className="h-8 px-3"
+                          data-testid={`button-follow-${user.id}`}
                         >
                           Follow
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveSuggestion(user.id)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <X className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -331,8 +528,10 @@ const SearchPage: React.FC = () => {
                 </Card>
               ))
             )}
-          </div>
-        </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

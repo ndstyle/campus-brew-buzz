@@ -1,0 +1,43 @@
+End-to-End User Flow Testing
+Objective: Validate that all user actions across the app are intuitive and functional, from landing page to profile management.
+Actions:
+Test user navigation from the landing page to sign-up, sign-in, onboarding, app usage, and logout.
+Ensure transitions between views (Feed, Social, Profile, etc.) are smooth and without errors.
+Confirm that no action results in dead-ends or errors, particularly with routing.
+2. Feature Functional Validation
+Objective: Ensure every feature operates as expected.
+Actions:
+Search Feature: Verify that the search functionality accurately returns cafes and users based on input. The search bar should trigger data fetching and display results dynamically.
+Recommendation Engines: Test the "Recs", "Trending", and "Friend Recs" sections to ensure they provide relevant data based on user actions or default placeholders (e.g., “Add friends for recommendations”).
+Review Submissions: Ensure users can submit reviews with ratings and photos, and that those are reflected immediately in the appropriate sections.
+const submitReview = async (reviewData) => {
+    try {
+        await addReviewToDatabase(reviewData);
+        refreshUserReviews(); // Fetch updated reviews
+    } catch (error) {
+        console.error("Error saving review:", error);
+    }
+};
+3. User Interface Consistency
+Objective: Maintain a consistent user experience across the application.
+Actions:
+Regularly review UI components for design uniformity (buttons, colors, font sizes).
+Implement design tokens or a theme provider for consistent styling.
+Ensure all pages use the same navigation structure (e.g., header, footer, sidebar).
+4. Bug and Issue Tracking
+Objective: Address general bugs and visualize ongoing issues.
+Actions:
+Create a log of all encountered bugs, categorizing them by severity.
+Ensure that all components are tested for state updates (e.g., modal visibility, button states).
+Regularly check for console errors and usability issues reported by users.
+5. Performance Enhancements
+Objective: Optimize performance for smoother user experience.
+Actions:
+Analyze overall app performance, focusing on load times and responsiveness.
+Optimize API calls, implement lazy loading for non-essential data, and use memoization for computationally expensive operations.
+6. Feedback and User Engagement
+Objective: Utilize user feedback to guide improvements and feature implementations.
+Actions:
+Implement UI elements to collect user feedback (e.g., “Did you find what you were looking for?” prompts).
+Hold user testing sessions to observe interactions and gather qualitative data on user experience.
+By following this prompt as a guideline for testing and enhancing your application, you can ensure both functionality and user satisfaction are at the forefront of your efforts. If you need specific code examples for any of these action items, feel free to ask!
