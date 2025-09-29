@@ -77,6 +77,20 @@ export const likes = pgTable("likes", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
+export const reviewLikes = pgTable("review_likes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  user_id: varchar("user_id").notNull().references(() => users.id),
+  review_id: varchar("review_id").notNull().references(() => reviews.id),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+export const reviewBookmarks = pgTable("review_bookmarks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  user_id: varchar("user_id").notNull().references(() => users.id),
+  review_id: varchar("review_id").notNull().references(() => reviews.id),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   created_at: true,
@@ -118,6 +132,16 @@ export const insertLikeSchema = createInsertSchema(likes).omit({
   created_at: true,
 });
 
+export const insertReviewLikeSchema = createInsertSchema(reviewLikes).omit({
+  id: true,
+  created_at: true,
+});
+
+export const insertReviewBookmarkSchema = createInsertSchema(reviewBookmarks).omit({
+  id: true,
+  created_at: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertCafe = z.infer<typeof insertCafeSchema>;
@@ -134,3 +158,7 @@ export type InsertSharedCafe = z.infer<typeof insertSharedCafeSchema>;
 export type SharedCafe = typeof sharedCafes.$inferSelect;
 export type InsertLike = z.infer<typeof insertLikeSchema>;
 export type Like = typeof likes.$inferSelect;
+export type InsertReviewLike = z.infer<typeof insertReviewLikeSchema>;
+export type ReviewLike = typeof reviewLikes.$inferSelect;
+export type InsertReviewBookmark = z.infer<typeof insertReviewBookmarkSchema>;
+export type ReviewBookmark = typeof reviewBookmarks.$inferSelect;

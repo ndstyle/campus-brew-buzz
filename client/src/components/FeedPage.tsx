@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bell, Menu, Heart, MessageCircle, Share, Plus, Bookmark, Search } from "lucide-react";
 import { useReviews } from "@/hooks/useReviews";
+import { useReviewInteractions } from "@/hooks/useReviewInteractions";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -19,11 +20,11 @@ interface FeedPageProps {
 const FeedPage = ({ searchMode = false, onReviewClick, onAddReview, refreshTrigger }: FeedPageProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
-  const [likedReviews, setLikedReviews] = useState<Set<string>>(new Set());
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const { fetchReviews } = useReviews();
+  const { fetchReviewStats, toggleLike, toggleBookmark, getReviewStats } = useReviewInteractions();
 
   const filters = [
     { id: "all", label: "🌍 All Reviews", icon: "🌍" },
@@ -36,6 +37,13 @@ const FeedPage = ({ searchMode = false, onReviewClick, onAddReview, refreshTrigg
     const scope = activeFilter === 'friends' ? 'friends' : 'all';
     const data = await fetchReviews(scope as any);
     setReviews(data);
+    
+    // Fetch interaction stats for all reviews
+    if (data.length > 0) {
+      const reviewIds = data.map((r: any) => r.id);
+      await fetchReviewStats(reviewIds);
+    }
+    
     setLoading(false);
   };
 
@@ -99,18 +107,6 @@ const FeedPage = ({ searchMode = false, onReviewClick, onAddReview, refreshTrigg
 
     return filtered;
   }, [reviews, searchQuery, activeFilter]);
-
-  const handleLike = (reviewId: string) => {
-    setLikedReviews(prev => {
-      const newLiked = new Set(prev);
-      if (newLiked.has(reviewId)) {
-        newLiked.delete(reviewId);
-      } else {
-        newLiked.add(reviewId);
-      }
-      return newLiked;
-    });
-  };
 
   const getDisplayName = (user: any) => {
     if (user?.first_name && user?.last_name) {
@@ -326,33 +322,69 @@ const FeedPage = ({ searchMode = false, onReviewClick, onAddReview, refreshTrigg
                   {/* Interaction Buttons */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-6">
-                      <button 
-                        className={`flex items-center space-x-1 transition-colors ${
-                          likedReviews.has(review.id) 
-                            ? 'text-red-500' 
-                            : 'text-muted-foreground hover:text-red-500'
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLike(review.id);
-                        }}
-                      >
-                        <Heart className={`w-5 h-5 ${likedReviews.has(review.id) ? 'fill-current' : ''}`} />
-                      </button>
-                      <button className="flex items-center space-x-1 text-muted-foreground hover:text-blue-500 transition-colors">
-                        <MessageCircle className="w-5 h-5" />
-                      </button>
-                      <button className="text-muted-foreground hover:text-green-500 transition-colors">
-                        <Share className="w-5 h-5" />
-                      </button>
+                      {(() => {
+                        const stats = getReviewStats(review.id);
+                        return (
+                          <>
+                            <button 
+                              className={`flex items-center space-x-1 transition-colors ${
+                                stats.isLiked 
+                                  ? 'text-red-500' 
+                                  : 'text-muted-foreground hover:text-red-500'
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleLike(review.id);
+                              }}
+                              data-testid={`button-like-${review.id}`}
+                            >
+                              <Heart className={`w-5 h-5 ${stats.isLiked ? 'fill-current' : ''}`} />
+                              {stats.likesCount > 0 && (
+                                <span className="text-xs">{stats.likesCount}</span>
+                              )}
+                            </button>
+                            <button 
+                              className="flex items-center space-x-1 text-muted-foreground hover:text-blue-500 transition-colors"
+                              data-testid={`button-comment-${review.id}`}
+                            >
+                              <MessageCircle className="w-5 h-5" />
+                            </button>
+                            <button 
+                              className="text-muted-foreground hover:text-green-500 transition-colors"
+                              data-testid={`button-share-${review.id}`}
+                            >
+                              <Share className="w-5 h-5" />
+                            </button>
+                          </>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center space-x-4">
-                      <button className="text-muted-foreground hover:text-primary transition-colors">
+                      <button 
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                        data-testid={`button-add-${review.id}`}
+                      >
                         <Plus className="w-5 h-5" />
                       </button>
-                      <button className="text-muted-foreground hover:text-yellow-500 transition-colors">
-                        <Bookmark className="w-5 h-5" />
-                      </button>
+                      {(() => {
+                        const stats = getReviewStats(review.id);
+                        return (
+                          <button 
+                            className={`transition-colors ${
+                              stats.isBookmarked 
+                                ? 'text-yellow-500' 
+                                : 'text-muted-foreground hover:text-yellow-500'
+                            }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleBookmark(review.id);
+                            }}
+                            data-testid={`button-bookmark-${review.id}`}
+                          >
+                            <Bookmark className={`w-5 h-5 ${stats.isBookmarked ? 'fill-current' : ''}`} />
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
