@@ -34,17 +34,21 @@ const FeedPage = ({ searchMode = false, onReviewClick, onAddReview, refreshTrigg
 
   const loadReviews = async () => {
     setLoading(true);
-    const scope = activeFilter === 'friends' ? 'friends' : 'all';
-    const data = await fetchReviews(scope as any);
-    setReviews(data);
-    
-    // Fetch interaction stats for all reviews
-    if (data.length > 0) {
-      const reviewIds = data.map((r: any) => r.id);
-      await fetchReviewStats(reviewIds);
+    try {
+      const scope = activeFilter === 'friends' ? 'friends' : 'all';
+      const data = await fetchReviews(scope as any);
+      setReviews(data);
+      
+      // Fetch interaction stats for all reviews
+      if (data.length > 0) {
+        const reviewIds = data.map((r: any) => r.id);
+        await fetchReviewStats(reviewIds);
+      }
+    } catch (error) {
+      console.error('[FEED] Error loading reviews:', error);
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   useEffect(() => {
